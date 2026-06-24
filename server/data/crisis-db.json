@@ -1,0 +1,99 @@
+{
+  "signals": [
+    {
+      "id": "sig-news-001",
+      "source": "news",
+      "title": "Flood water rising near east logistics corridor",
+      "location": "Bekasi Timur",
+      "lat": -6.238,
+      "lng": 107.018,
+      "category": "weather_extreme",
+      "severity": 82,
+      "velocity": 74,
+      "credibility": 91,
+      "sentiment": -61,
+      "reach": 470000,
+      "timestamp": "2026-06-24T14:05:00.000Z",
+      "summary": "Three local reports and one regional outlet mention road closures near warehouse access points."
+    },
+    {
+      "id": "sig-social-002",
+      "source": "x",
+      "title": "Brand hashtag linked to refund scam screenshots",
+      "location": "Jakarta",
+      "lat": -6.2,
+      "lng": 106.816,
+      "category": "scam",
+      "severity": 77,
+      "velocity": 88,
+      "credibility": 68,
+      "sentiment": -72,
+      "reach": 1260000,
+      "timestamp": "2026-06-24T14:12:00.000Z",
+      "summary": "Screenshots of fake refund links are spreading with a brand hashtag and angry customer replies."
+    },
+    {
+      "id": "sig-video-003",
+      "source": "tiktok",
+      "title": "Event crowd confusion at gate B",
+      "location": "Bandung",
+      "lat": -6.917,
+      "lng": 107.619,
+      "category": "event_safety",
+      "severity": 64,
+      "velocity": 82,
+      "credibility": 62,
+      "sentiment": -49,
+      "reach": 530000,
+      "timestamp": "2026-06-24T14:17:00.000Z",
+      "summary": "Short videos show queue compression and unclear signage near entry gate B."
+    },
+    {
+      "id": "sig-community-004",
+      "source": "citizen_report",
+      "title": "Rumor about contaminated aid packages",
+      "location": "Semarang",
+      "lat": -6.966,
+      "lng": 110.416,
+      "category": "hoax",
+      "severity": 55,
+      "velocity": 67,
+      "credibility": 44,
+      "sentiment": -58,
+      "reach": 210000,
+      "timestamp": "2026-06-24T14:19:00.000Z",
+      "summary": "Community group posts claim aid packages are unsafe, but no official confirmation exists."
+    },
+    {
+      "id": "sig-supply-005",
+      "source": "rss",
+      "title": "Port delay may disrupt medical supply route",
+      "location": "Surabaya",
+      "lat": -7.257,
+      "lng": 112.752,
+      "category": "supply_disruption",
+      "severity": 69,
+      "velocity": 58,
+      "credibility": 83,
+      "sentiment": -43,
+      "reach": 320000,
+      "timestamp": "2026-06-24T14:24:00.000Z",
+      "summary": "Shipping RSS feeds and vendor updates indicate delay in cold-chain medical supplies."
+    }
+  ],
+  "teams": [
+    { "id": "team-pr", "name": "PR Team", "role": "statement owner", "status": "active" },
+    { "id": "team-ngo", "name": "NGO Response", "role": "field verification", "status": "standby" },
+    { "id": "team-gov", "name": "Local Government", "role": "public instruction", "status": "active" },
+    { "id": "team-creator", "name": "Creator Desk", "role": "audience coordination", "status": "monitoring" }
+  ],
+  "auditTrail": [
+    {
+      "id": "audit-001",
+      "situationId": "weather_extreme",
+      "time": "2026-06-24T14:20:00.000Z",
+      "reason": "Risk raised because severity and credibility were both above 80 with negative sentiment.",
+      "recommendation": "Open logistics continuity room and publish road-closure advisory."
+    }
+  ]
+}
