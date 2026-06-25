@@ -182,8 +182,7 @@
 }
 
 .hero-copy h1,
-.section-title h2,
-.scroll-copy h2 {
+.section-title h2 {
   margin: 0;
   color: var(--ink);
   font-size: clamp(3.2rem, 8.2vw, 7.6rem);
@@ -192,7 +191,6 @@
 }
 
 .hero-copy p,
-.scroll-copy p,
 .panel-title small,
 .timeline-item p,
 .action-panel small {
@@ -347,20 +345,15 @@
 
 .scroll-lab {
   min-height: 160vh;
-  display: grid;
-  grid-template-columns: 0.75fr 1fr;
-  gap: 34px;
-  align-items: start;
+  display: block;
   padding: 78px 0;
 }
 
-.scroll-copy,
 .frame-stage {
   position: sticky;
   top: 104px;
 }
 
-.scroll-copy h2,
 .section-title h2 {
   font-size: clamp(2.2rem, 5.3vw, 5rem);
   margin-top: 12px;
@@ -383,17 +376,23 @@
   user-select: none;
 }
 
-.frame-badge {
+.frame-progress {
   position: absolute;
+  left: 18px;
   right: 18px;
   bottom: 18px;
-  padding: 12px 14px;
+  height: 14px;
   border: 2px solid var(--line);
-  color: #111317;
-  background: var(--amber);
+  background: color-mix(in srgb, var(--panel) 76%, transparent);
   box-shadow: 4px 4px 0 var(--shadow);
-  font-weight: 1000;
-  line-height: 1;
+  overflow: hidden;
+}
+
+.frame-progress span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--red), var(--amber), var(--cyan));
+  transition: width 80ms linear;
 }
 
 .monitor,
@@ -719,7 +718,6 @@
     min-height: auto;
   }
 
-  .scroll-copy,
   .frame-stage {
     position: static;
   }

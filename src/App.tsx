@@ -18,7 +18,6 @@ import {
   Moon,
   RadioTower,
   RefreshCcw,
-  Route,
   ShieldAlert,
   Siren,
   Sun,
@@ -263,20 +262,10 @@ function App() {
       </section>
 
       <section className="scroll-lab" ref={flowRef}>
-        <div className="scroll-copy">
-          <span className="kicker">
-            <Route size={16} /> Crisis flow 30fps
-          </span>
-          <h2>Scroll animation frame-by-frame.</h2>
-          <p>
-            320 file SVG individual dipetakan ke progress scroll. Area sticky ini hanya
-            menjalankan pergantian frame dari 001 sampai 320 secara halus.
-          </p>
-        </div>
         <div className="frame-stage panel">
           <img src={framePath(frame)} alt={`CrisisSignal AI animation frame ${frame + 1}`} />
-          <div className="frame-badge">
-            <strong>Frame{String(frame + 1).padStart(3, '0')} / {totalFrames}</strong>
+          <div className="frame-progress" aria-hidden="true">
+            <span style={{ width: `${((frame + 1) / totalFrames) * 100}%` }} />
           </div>
         </div>
       </section>
