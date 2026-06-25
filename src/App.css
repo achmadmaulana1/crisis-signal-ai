@@ -275,21 +275,26 @@
 
 .orb-sweep {
   position: absolute;
-  inset: 50% 50% auto auto;
-  width: 48%;
+  left: 50%;
+  top: calc(50% - 1.5px);
+  width: 46%;
   height: 3px;
   transform-origin: left center;
   background: linear-gradient(90deg, var(--amber), transparent);
+  border-radius: 999px;
+  pointer-events: none;
 }
 
 .risk-orb strong {
   position: relative;
+  z-index: 2;
   font-size: 5rem;
   line-height: 1;
 }
 
 .risk-orb span {
   position: absolute;
+  z-index: 2;
   bottom: 88px;
   color: var(--muted);
   font-weight: 1000;

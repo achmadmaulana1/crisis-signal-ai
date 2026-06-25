@@ -19,7 +19,6 @@ import {
   RadioTower,
   RefreshCcw,
   Route,
-  Satellite,
   ShieldAlert,
   Siren,
   Sun,
@@ -185,9 +184,6 @@ function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
           >
-            <span className="kicker">
-              <Satellite size={16} /> Repo: {repoName}
-            </span>
             <h1>Jangan tunggu krisis viral dulu.</h1>
             <p>{repoDescription}</p>
             <div className="hero-actions">
