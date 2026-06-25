@@ -40,6 +40,7 @@ type Theme = 'dark' | 'light'
 const repoName = 'crisis-signal-ai'
 const repoDescription =
   'Fullstack AI crisis agent for real-time signals, risk scoring, crisis maps, auto timelines, action recommendations, generated statements, collaboration, and audit trails.'
+const totalFrames = 320
 
 const sourceLabels: Record<Source, string> = {
   news: 'News',
@@ -102,11 +103,20 @@ function App() {
   const [error, setError] = useState('')
   const flowRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({ target: flowRef, offset: ['start end', 'end start'] })
-  const animatedFrame = useTransform(scrollYProgress, [0, 1], [0, 319])
+  const animatedFrame = useTransform(scrollYProgress, [0, 1], [0, totalFrames - 1])
 
   useMotionValueEvent(animatedFrame, 'change', (latest) => {
-    setFrame(Math.max(0, Math.min(319, Math.round(latest))))
+    const nextFrame = Math.max(0, Math.min(totalFrames - 1, Math.round(latest)))
+    setFrame((current) => (current === nextFrame ? current : nextFrame))
   })
+
+  useEffect(() => {
+    Array.from({ length: totalFrames }, (_, index) => {
+      const image = new Image()
+      image.src = framePath(index)
+      return image
+    })
+  }, [])
 
   useEffect(() => {
     getDashboard()
@@ -257,17 +267,16 @@ function App() {
           <span className="kicker">
             <Route size={16} /> Crisis flow 30fps
           </span>
-          <h2>320 frame individual dari sinyal awal ke keputusan tim.</h2>
+          <h2>Scroll animation frame-by-frame.</h2>
           <p>
-            Scroll animation menggambarkan sinyal tersebar, clustering AI, scoring risiko, peta
-            krisis, rekomendasi tindakan, statement publik, dan audit trail.
+            320 file SVG individual dipetakan ke progress scroll. Area sticky ini hanya
+            menjalankan pergantian frame dari 001 sampai 320 secara halus.
           </p>
         </div>
         <div className="frame-stage panel">
           <img src={framePath(frame)} alt={`CrisisSignal AI animation frame ${frame + 1}`} />
           <div className="frame-badge">
-            <span>Frame</span>
-            <strong>{String(frame + 1).padStart(3, '0')} / 320</strong>
+            <strong>Frame{String(frame + 1).padStart(3, '0')} / {totalFrames}</strong>
           </div>
         </div>
       </section>

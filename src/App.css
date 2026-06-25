@@ -371,12 +371,16 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  contain: layout paint;
 }
 
 .frame-stage img {
   width: min(100%, 790px);
   aspect-ratio: 1;
   object-fit: contain;
+  transform: translateZ(0);
+  will-change: contents;
+  user-select: none;
 }
 
 .frame-badge {
@@ -389,6 +393,7 @@
   background: var(--amber);
   box-shadow: 4px 4px 0 var(--shadow);
   font-weight: 1000;
+  line-height: 1;
 }
 
 .monitor,
