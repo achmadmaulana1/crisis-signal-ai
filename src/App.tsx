@@ -612,20 +612,48 @@ function App() {
       )}
 
       <footer className="site-footer">
-        <div>
-          <strong>CrisisSignal AI</strong>
-          <span>Real-time crisis monitoring, risk scoring, response workflow, and auditable AI recommendations.</span>
+        <div className="footer-identity panel">
+          <img src="/brand/crisis-signal-logo.png" alt="" />
+          <div>
+            <span className="footer-kicker">Crisis command layer</span>
+            <strong>CrisisSignal AI</strong>
+            <p>Monitoring real-time, scoring risiko, rekomendasi respons, dan audit trail dalam satu ruang operasi.</p>
+          </div>
         </div>
-        <div className="footer-stack">
-          <span>
-            <Database size={16} /> JSON demo DB
-          </span>
-          <span>
-            <Server size={16} /> Express API
-          </span>
-          <span>
-            <Brain size={16} /> Risk engine
-          </span>
+
+        <div className="footer-ops">
+          <div className="footer-status">
+            <span>
+              <RadioTower size={16} /> {dashboard.stats.totalSignals} signals
+            </span>
+            <span>
+              <ShieldAlert size={16} /> {dashboard.stats.high + dashboard.stats.critical} escalated
+            </span>
+            <span>
+              <Globe2 size={16} /> {formatReach(dashboard.stats.monitoredReach)} reach
+            </span>
+          </div>
+
+          <div className="footer-stack">
+            <span>
+              <Database size={16} /> JSON DB
+            </span>
+            <span>
+              <Server size={16} /> API
+            </span>
+            <span>
+              <Brain size={16} /> Risk engine
+            </span>
+            <span>
+              <FileText size={16} /> Audit log
+            </span>
+          </div>
+
+          <div className="footer-links">
+            <a href="#top">Overview</a>
+            <a href="#monitor">Monitor</a>
+            <a href="#response">Response</a>
+          </div>
         </div>
       </footer>
     </main>
