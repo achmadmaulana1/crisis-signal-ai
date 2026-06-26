@@ -7,6 +7,7 @@ import {
   Brain,
   ChevronRight,
   ClipboardList,
+  Database,
   FileText,
   Flame,
   Gauge,
@@ -18,6 +19,7 @@ import {
   Moon,
   RadioTower,
   RefreshCcw,
+  Server,
   ShieldAlert,
   Siren,
   Sun,
@@ -26,8 +28,8 @@ import {
 import {
   AnimatePresence,
   motion,
-  useMotionValueEvent,
-  useScroll,
+  useMotionValue,
+  useSpring,
   useTransform,
 } from 'framer-motion'
 import { getDashboard, ingestSignal, resetDemo } from './lib/api'
@@ -101,21 +103,73 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const flowRef = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: flowRef, offset: ['start end', 'end start'] })
-  const animatedFrame = useTransform(scrollYProgress, [0, 1], [0, totalFrames - 1])
-
-  useMotionValueEvent(animatedFrame, 'change', (latest) => {
-    const nextFrame = Math.max(0, Math.min(totalFrames - 1, Math.round(latest)))
-    setFrame((current) => (current === nextFrame ? current : nextFrame))
-  })
+  const preloadedFrames = useRef<HTMLImageElement[]>([])
+  const frameProgressValue = useMotionValue(0)
+  const smoothFrameProgress = useSpring(frameProgressValue, { stiffness: 170, damping: 28, mass: 0.25 })
+  const frameDrift = useTransform(smoothFrameProgress, [0, 1], [-18, 18])
+  const frameScale = useTransform(smoothFrameProgress, [0, 1], [0.97, 1.03])
+  const frameGlow = useTransform(smoothFrameProgress, [0, 1], [0.18, 0.42])
+  const cursorX = useMotionValue(-120)
+  const cursorY = useMotionValue(-120)
+  const smoothCursorX = useSpring(cursorX, { stiffness: 220, damping: 34, mass: 0.32 })
+  const smoothCursorY = useSpring(cursorY, { stiffness: 220, damping: 34, mass: 0.32 })
 
   useEffect(() => {
-    Array.from({ length: totalFrames }, (_, index) => {
+    let animationId = 0
+
+    function updateFrame() {
+      const section = flowRef.current
+
+      if (!section) {
+        return
+      }
+
+      const rect = section.getBoundingClientRect()
+      const scrollDistance = Math.max(1, rect.height - window.innerHeight)
+      const progress = Math.max(0, Math.min(1, -rect.top / scrollDistance))
+      const nextFrame = Math.round(progress * (totalFrames - 1))
+
+      frameProgressValue.set(progress)
+      setFrame((current) => (current === nextFrame ? current : nextFrame))
+    }
+
+    function requestUpdate() {
+      cancelAnimationFrame(animationId)
+      animationId = requestAnimationFrame(updateFrame)
+    }
+
+    requestUpdate()
+    window.addEventListener('scroll', requestUpdate, { passive: true })
+    window.addEventListener('resize', requestUpdate)
+
+    return () => {
+      cancelAnimationFrame(animationId)
+      window.removeEventListener('scroll', requestUpdate)
+      window.removeEventListener('resize', requestUpdate)
+    }
+  }, [frameProgressValue])
+
+  useEffect(() => {
+    preloadedFrames.current = Array.from({ length: totalFrames }, (_, index) => {
       const image = new Image()
+      image.decoding = 'sync'
       image.src = framePath(index)
       return image
     })
   }, [])
+
+  useEffect(() => {
+    function updateCursor(event: PointerEvent) {
+      cursorX.set(event.clientX)
+      cursorY.set(event.clientY)
+    }
+
+    window.addEventListener('pointermove', updateCursor, { passive: true })
+
+    return () => {
+      window.removeEventListener('pointermove', updateCursor)
+    }
+  }, [cursorX, cursorY])
 
   useEffect(() => {
     getDashboard()
@@ -146,7 +200,7 @@ function App() {
 
   if (loading) {
     return (
-      <main className="app" data-theme={theme}>
+      <main className="app status-shell" data-theme={theme}>
         <div className="loading-panel">Loading CrisisSignal AI...</div>
       </main>
     )
@@ -154,7 +208,7 @@ function App() {
 
   if (error || !dashboard) {
     return (
-      <main className="app" data-theme={theme}>
+      <main className="app status-shell" data-theme={theme}>
         <div className="loading-panel">API belum aktif: {error || 'dashboard kosong'}</div>
       </main>
     )
@@ -162,6 +216,14 @@ function App() {
 
   return (
     <main className="app" data-theme={theme}>
+      <motion.div
+        className="cursor-field"
+        style={{
+          x: smoothCursorX,
+          y: smoothCursorY,
+        }}
+        aria-hidden="true"
+      />
       <section className="hero" id="top">
         <nav className="nav">
           <a className="brand" href="#top" aria-label="CrisisSignal AI">
@@ -263,7 +325,28 @@ function App() {
 
       <section className="scroll-lab" ref={flowRef}>
         <div className="frame-stage panel">
-          <img src={framePath(frame)} alt={`CrisisSignal AI animation frame ${frame + 1}`} />
+          <div className="frame-hud" aria-hidden="true">
+            <span>
+              <Server size={15} /> Live pipeline
+            </span>
+            <strong>Frame {String(frame + 1).padStart(3, '0')} / {totalFrames}</strong>
+          </div>
+          <motion.div
+            className="frame-glow"
+            style={{
+              opacity: frameGlow,
+              x: frameDrift,
+            }}
+            aria-hidden="true"
+          />
+          <motion.img
+            src={framePath(frame)}
+            alt={`CrisisSignal AI animation frame ${frame + 1}`}
+            style={{ scale: frameScale }}
+            loading="eager"
+            decoding="sync"
+            draggable={false}
+          />
           <div className="frame-progress" aria-hidden="true">
             <span style={{ width: `${((frame + 1) / totalFrames) * 100}%` }} />
           </div>
@@ -527,6 +610,24 @@ function App() {
           </div>
         </section>
       )}
+
+      <footer className="site-footer">
+        <div>
+          <strong>CrisisSignal AI</strong>
+          <span>Real-time crisis monitoring, risk scoring, response workflow, and auditable AI recommendations.</span>
+        </div>
+        <div className="footer-stack">
+          <span>
+            <Database size={16} /> JSON demo DB
+          </span>
+          <span>
+            <Server size={16} /> Express API
+          </span>
+          <span>
+            <Brain size={16} /> Risk engine
+          </span>
+        </div>
+      </footer>
     </main>
   )
 }
