@@ -8,15 +8,19 @@ export const levelFromScore = (score) => {
 }
 
 export function scoreSignal(signal) {
+  return Math.round(Object.values(scoreBreakdown(signal)).reduce((sum, value) => sum + value, 0))
+}
+
+export function scoreBreakdown(signal) {
   const reachScore = Math.min(100, Math.log10(Math.max(signal.reach, 10)) * 13)
   const negativeSentiment = Math.abs(Math.min(0, signal.sentiment))
-  return Math.round(
-    signal.severity * 0.3 +
-      signal.velocity * 0.24 +
-      signal.credibility * 0.22 +
-      reachScore * 0.12 +
-      negativeSentiment * 0.12,
-  )
+  return {
+    severity: Math.round(signal.severity * 0.3),
+    velocity: Math.round(signal.velocity * 0.24),
+    credibility: Math.round(signal.credibility * 0.22),
+    reach: Math.round(reachScore * 0.12),
+    sentiment: Math.round(negativeSentiment * 0.12),
+  }
 }
 
 export function clusterSituations(signals, auditTrail = []) {
@@ -47,6 +51,8 @@ export function clusterSituations(signals, auditTrail = []) {
         category,
         title: titleForCategory(category),
         score,
+        scoreBreakdown: aggregateBreakdown(items),
+        scoreHistory: buildScoreHistory(items),
         level: levelFromScore(score),
         location: peak.location,
         lat: peak.lat,
@@ -56,6 +62,7 @@ export function clusterSituations(signals, auditTrail = []) {
         summary: summarizeSituation(category, items, score),
         nextAction: recommendAction(category, score, items),
         statement: generateStatement(category, score, peak.location),
+        playbook: buildPlaybook(category, score),
         timeline,
         audit: auditTrail.filter((entry) => entry.situationId === category),
         evidence: items.map((item) => ({
@@ -64,6 +71,8 @@ export function clusterSituations(signals, auditTrail = []) {
           title: item.title,
           credibility: item.credibility,
           score: scoreSignal(item),
+          verification: verificationStatus(item),
+          summary: item.summary,
         })),
       }
     })
@@ -121,9 +130,78 @@ export function dashboardSummary(db) {
       monitoredReach: db.signals.reduce((sum, item) => sum + item.reach, 0),
     },
     situations,
+    alerts: buildAlerts(situations),
+    playbooks: buildPlaybookCatalog(),
     teams: db.teams,
     latestAudit: db.auditTrail.slice(0, 8),
   }
+}
+
+export function buildReport(db, situationId) {
+  const situation = clusterSituations(db.signals, db.auditTrail).find((item) => item.id === situationId)
+  if (!situation) return null
+
+  return {
+    exportedAt: new Date().toISOString(),
+    service: 'CrisisSignal AI',
+    situation,
+    report: {
+      headline: `${situation.title} - ${situation.level.toUpperCase()} (${situation.score})`,
+      summary: situation.summary,
+      recommendation: situation.nextAction.primary,
+      statement: situation.statement,
+      auditReasons: situation.audit.map((item) => item.reason),
+    },
+  }
+}
+
+export function scenarioSignal(input = {}) {
+  const scenarios = {
+    flood: {
+      source: 'weather',
+      title: 'Rain cell intensifies near commuter corridor',
+      location: 'Tangerang Selatan',
+      lat: -6.288,
+      lng: 106.717,
+      category: 'weather_extreme',
+      severity: 86,
+      velocity: 81,
+      credibility: 88,
+      sentiment: -64,
+      reach: 920000,
+      summary: 'Weather API and commuter reports indicate fast-moving flood risk near the evening rush route.',
+    },
+    scam: {
+      source: 'x',
+      title: 'Fake giveaway link copied across creator comments',
+      location: 'Jakarta',
+      lat: -6.2,
+      lng: 106.816,
+      category: 'scam',
+      severity: 81,
+      velocity: 92,
+      credibility: 73,
+      sentiment: -77,
+      reach: 1800000,
+      summary: 'Multiple accounts are reposting a lookalike URL under official brand and creator posts.',
+    },
+    crowd: {
+      source: 'tiktok',
+      title: 'Crowd compression clip gains traction before gates open',
+      location: 'Bandung',
+      lat: -6.917,
+      lng: 107.619,
+      category: 'event_safety',
+      severity: 76,
+      velocity: 85,
+      credibility: 69,
+      sentiment: -58,
+      reach: 760000,
+      summary: 'Short-form video shows crowd pressure at a side entrance while commenters ask for official guidance.',
+    },
+  }
+
+  return scenarios[input.scenario] || scenarios.scam
 }
 
 function titleForCategory(category) {
@@ -187,6 +265,84 @@ function recommendAction(category, score, items) {
             : 'Monitor normally and log evidence.',
     steps: [...(playbooks[category] || ['Create triage ticket and route to the correct owner.']), ...shared],
   }
+}
+
+function aggregateBreakdown(items) {
+  const initial = { severity: 0, velocity: 0, credibility: 0, reach: 0, sentiment: 0 }
+  const sum = items.reduce((acc, item) => {
+    const breakdown = scoreBreakdown(item)
+    Object.keys(acc).forEach((key) => {
+      acc[key] += breakdown[key]
+    })
+    return acc
+  }, initial)
+
+  Object.keys(sum).forEach((key) => {
+    sum[key] = Math.round(sum[key] / Math.max(1, items.length))
+  })
+
+  return sum
+}
+
+function buildScoreHistory(items) {
+  return items
+    .slice()
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    .map((item, index, source) => {
+      const slice = source.slice(0, index + 1)
+      const score = Math.round(slice.reduce((sum, value) => sum + scoreSignal(value), 0) / slice.length)
+      return { time: item.timestamp, score }
+    })
+}
+
+function verificationStatus(signal) {
+  if (signal.credibility >= 80) return 'confirmed'
+  if (signal.credibility >= 58) return 'needs_review'
+  return 'unverified'
+}
+
+function buildPlaybook(category, score) {
+  const action = recommendAction(category, score, [])
+  return action.steps.map((step, index) => ({
+    id: `${category}-${index + 1}`,
+    label: step,
+    owner: index % 3 === 0 ? 'Ops lead' : index % 3 === 1 ? 'Comms' : 'Verification',
+    eta: index < 2 ? '15m' : '30m',
+    priority: index < 2 ? 'high' : 'normal',
+  }))
+}
+
+function buildPlaybookCatalog() {
+  const categories = [
+    'weather_extreme',
+    'scam',
+    'event_safety',
+    'hoax',
+    'supply_disruption',
+    'brand_issue',
+    'social_conflict',
+  ]
+
+  return categories.map((category) => ({
+    id: category,
+    title: titleForCategory(category),
+    actions: buildPlaybook(category, 70),
+  }))
+}
+
+function buildAlerts(situations) {
+  return situations
+    .filter((situation) => situation.score >= 64 || situation.reach >= 1000000)
+    .map((situation) => ({
+      id: `alert-${situation.id}`,
+      situationId: situation.id,
+      level: situation.score >= 82 ? 'critical' : 'high',
+      title: situation.score >= 82 ? 'Critical escalation rule triggered' : 'High-risk watch rule triggered',
+      message:
+        situation.score >= 82
+          ? `${situation.title} requires immediate response room activation.`
+          : `${situation.title} crossed the high-risk threshold or public reach guardrail.`,
+    }))
 }
 
 function generateStatement(category, score, location) {

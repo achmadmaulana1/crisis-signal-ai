@@ -2,7 +2,14 @@ import cors from 'cors'
 import express from 'express'
 import morgan from 'morgan'
 import { readDb, writeDb } from './db.js'
-import { clusterSituations, dashboardSummary, ingestSignal, scoreSignal } from './lib/crisisEngine.js'
+import {
+  buildReport,
+  clusterSituations,
+  dashboardSummary,
+  ingestSignal,
+  scenarioSignal,
+  scoreSignal,
+} from './lib/crisisEngine.js'
 
 const app = express()
 const port = Number(process.env.PORT || 4177)
@@ -49,10 +56,53 @@ app.get('/api/situations/:id', async (request, response, next) => {
   }
 })
 
+app.get('/api/situations/:id/report', async (request, response, next) => {
+  try {
+    const db = await readDb()
+    const report = buildReport(db, request.params.id)
+    if (!report) {
+      response.status(404).json({ error: 'Situation not found' })
+      return
+    }
+    response.json(report)
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/alerts', async (_request, response, next) => {
+  try {
+    const db = await readDb()
+    response.json(dashboardSummary(db).alerts)
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.get('/api/playbooks', async (_request, response, next) => {
+  try {
+    const db = await readDb()
+    response.json(dashboardSummary(db).playbooks)
+  } catch (error) {
+    next(error)
+  }
+})
+
 app.post('/api/ingest', async (request, response, next) => {
   try {
     const db = await readDb()
     const signal = ingestSignal(db, request.body)
+    await writeDb(db)
+    response.status(201).json({ signal, dashboard: dashboardSummary(db) })
+  } catch (error) {
+    next(error)
+  }
+})
+
+app.post('/api/simulate', async (request, response, next) => {
+  try {
+    const db = await readDb()
+    const signal = ingestSignal(db, scenarioSignal(request.body))
     await writeDb(db)
     response.status(201).json({ signal, dashboard: dashboardSummary(db) })
   } catch (error) {

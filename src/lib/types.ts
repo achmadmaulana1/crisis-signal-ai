@@ -8,6 +8,7 @@ export type Category =
   | 'brand_issue'
   | 'social_conflict'
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
+export type VerificationStatus = 'confirmed' | 'needs_review' | 'unverified'
 
 export type Signal = {
   id: string
@@ -32,6 +33,11 @@ export type Situation = {
   category: Category
   title: string
   score: number
+  scoreBreakdown: Record<'severity' | 'velocity' | 'credibility' | 'reach' | 'sentiment', number>
+  scoreHistory: Array<{
+    time: string
+    score: number
+  }>
   level: RiskLevel
   location: string
   lat: number
@@ -44,6 +50,13 @@ export type Situation = {
     steps: string[]
   }
   statement: string
+  playbook: Array<{
+    id: string
+    label: string
+    owner: string
+    eta: string
+    priority: 'high' | 'normal'
+  }>
   timeline: Array<{
     id: string
     time: string
@@ -64,6 +77,8 @@ export type Situation = {
     title: string
     credibility: number
     score: number
+    verification: VerificationStatus
+    summary: string
   }>
 }
 
@@ -86,6 +101,18 @@ export type Dashboard = {
     monitoredReach: number
   }
   situations: Situation[]
+  alerts: Array<{
+    id: string
+    situationId: Category
+    level: 'high' | 'critical'
+    title: string
+    message: string
+  }>
+  playbooks: Array<{
+    id: Category
+    title: string
+    actions: Situation['playbook']
+  }>
   teams: Team[]
   latestAudit: Situation['audit']
 }

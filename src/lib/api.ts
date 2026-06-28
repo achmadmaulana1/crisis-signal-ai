@@ -21,3 +21,19 @@ export async function resetDemo() {
   if (!response.ok) throw new Error('Failed to reset demo')
   return response.json() as Promise<Dashboard>
 }
+
+export async function simulateScenario(scenario: 'flood' | 'scam' | 'crowd') {
+  const response = await fetch('/api/simulate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenario }),
+  })
+  if (!response.ok) throw new Error('Failed to run scenario')
+  return response.json() as Promise<{ signal: Signal; dashboard: Dashboard }>
+}
+
+export async function getSituationReport(id: string) {
+  const response = await fetch(`/api/situations/${id}/report`)
+  if (!response.ok) throw new Error('Failed to export report')
+  return response.json()
+}

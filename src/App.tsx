@@ -1,29 +1,41 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle,
+  Activity,
   ArrowUpRight,
   BadgeCheck,
   BellRing,
   Brain,
+  CheckCircle2,
   ChevronRight,
   ClipboardList,
   Database,
+  Download,
+  Eye,
+  Filter,
   FileText,
   Flame,
   Gauge,
   Globe2,
   Handshake,
   History,
+  Layers3,
+  ListChecks,
   MapPin,
+  Maximize2,
   Megaphone,
+  Minimize2,
   Moon,
+  Play,
   RadioTower,
+  Search,
   RefreshCcw,
   Server,
   ShieldAlert,
   Siren,
   Sun,
   UsersRound,
+  X,
 } from 'lucide-react'
 import {
   AnimatePresence,
@@ -32,8 +44,8 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion'
-import { getDashboard, ingestSignal, resetDemo } from './lib/api'
-import type { Category, Dashboard, Signal, Situation, Source } from './lib/types'
+import { getDashboard, getSituationReport, ingestSignal, resetDemo, simulateScenario } from './lib/api'
+import type { Category, Dashboard, RiskLevel, Signal, Situation, Source } from './lib/types'
 import './App.css'
 
 type Theme = 'dark' | 'light'
@@ -71,6 +83,13 @@ const levelLabels = {
   critical: 'Kritis',
 }
 
+const filterLevels: Array<'all' | RiskLevel> = ['all', 'critical', 'high', 'medium', 'low']
+const scenarioOptions: Array<{ id: 'flood' | 'scam' | 'crowd'; label: string }> = [
+  { id: 'flood', label: 'Flood surge' },
+  { id: 'scam', label: 'Scam spike' },
+  { id: 'crowd', label: 'Crowd risk' },
+]
+
 const seedForm = {
   source: 'citizen_report' as Source,
   title: 'Crowd rumor spreading near venue entrance',
@@ -102,6 +121,13 @@ function App() {
   const [form, setForm] = useState(seedForm)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [query, setQuery] = useState('')
+  const [levelFilter, setLevelFilter] = useState<'all' | RiskLevel>('all')
+  const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all')
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [commandMode, setCommandMode] = useState(false)
+  const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
+  const [busyAction, setBusyAction] = useState('')
   const flowRef = useRef<HTMLDivElement>(null)
   const preloadedFrames = useRef<HTMLImageElement[]>([])
   const frameProgressValue = useMotionValue(0)
@@ -185,17 +211,73 @@ function App() {
     () => dashboard?.situations.find((item) => item.id === activeId) ?? dashboard?.situations[0],
     [activeId, dashboard],
   )
+  const filteredSituations = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+
+    return (dashboard?.situations ?? []).filter((situation) => {
+      const matchesLevel = levelFilter === 'all' || situation.level === levelFilter
+      const matchesCategory = categoryFilter === 'all' || situation.category === categoryFilter
+      const matchesQuery =
+        !needle ||
+        [situation.title, situation.location, situation.summary, situation.category]
+          .join(' ')
+          .toLowerCase()
+          .includes(needle)
+
+      return matchesLevel && matchesCategory && matchesQuery
+    })
+  }, [categoryFilter, dashboard?.situations, levelFilter, query])
+  const activeCompletion = useMemo(() => {
+    if (!activeSituation?.playbook.length) return 0
+    const done = activeSituation.playbook.filter((item) => completedActions[`${activeSituation.id}-${item.id}`]).length
+    return Math.round((done / activeSituation.playbook.length) * 100)
+  }, [activeSituation, completedActions])
 
   async function submitSignal() {
     const result = await ingestSignal(form as Partial<Signal>)
     setDashboard(result.dashboard)
     setActiveId(result.signal.category)
+    setDetailOpen(true)
   }
 
   async function restoreDemo() {
     const next = await resetDemo()
     setDashboard(next)
     setActiveId(next.situations[0]?.id ?? 'weather_extreme')
+  }
+
+  async function runScenario(scenario: 'flood' | 'scam' | 'crowd') {
+    setBusyAction(scenario)
+    try {
+      const result = await simulateScenario(scenario)
+      setDashboard(result.dashboard)
+      setActiveId(result.signal.category)
+      setDetailOpen(true)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function exportReport() {
+    if (!activeSituation) return
+    setBusyAction('export')
+    try {
+      const report = await getSituationReport(activeSituation.id)
+      const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `crisis-report-${activeSituation.id}.json`
+      link.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  function selectSituation(id: Category, openDrawer = true) {
+    setActiveId(id)
+    setDetailOpen(openDrawer)
   }
 
   if (loading) {
@@ -215,7 +297,7 @@ function App() {
   }
 
   return (
-    <main className="app" data-theme={theme}>
+    <main className={`app ${commandMode ? 'command-mode' : ''}`} data-theme={theme}>
       <motion.div
         className="cursor-field"
         style={{
@@ -234,6 +316,15 @@ function App() {
             </span>
           </a>
           <div className="nav-actions">
+            <button
+              type="button"
+              className="nav-command"
+              onClick={() => setCommandMode((value) => !value)}
+              title="Command center"
+            >
+              {commandMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              Command
+            </button>
             <a href="#monitor">Monitor</a>
             <a href="#response">Response</a>
             <button
@@ -304,6 +395,26 @@ function App() {
         </div>
       </section>
 
+      {dashboard.alerts.length > 0 && (
+        <section className="alert-strip" aria-label="Crisis alert rules">
+          {dashboard.alerts.slice(0, 3).map((alert) => (
+            <button
+              key={alert.id}
+              type="button"
+              className={`alert-rule ${alert.level}`}
+              onClick={() => selectSituation(alert.situationId)}
+            >
+              <Siren size={18} />
+              <span>
+                <strong>{alert.title}</strong>
+                <small>{alert.message}</small>
+              </span>
+              <ArrowUpRight size={17} />
+            </button>
+          ))}
+        </section>
+      )}
+
       <section className="metrics-strip">
         <div>
           <strong>{dashboard.stats.totalSignals}</strong>
@@ -322,6 +433,45 @@ function App() {
           <span>public reach</span>
         </div>
       </section>
+
+      {activeSituation && (
+        <section className="ops-deck">
+          <div className="ops-card panel">
+            <span className="kicker">
+              <Play size={16} /> Scenario simulator
+            </span>
+            <div className="scenario-row">
+              {scenarioOptions.map((scenario) => (
+                <button
+                  key={scenario.id}
+                  type="button"
+                  onClick={() => runScenario(scenario.id)}
+                  disabled={busyAction === scenario.id}
+                >
+                  {busyAction === scenario.id ? 'Running...' : scenario.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="ops-card panel">
+            <span className="kicker">
+              <ListChecks size={16} /> Playbook progress
+            </span>
+            <strong>{activeCompletion}% complete</strong>
+            <div className="mini-progress" aria-hidden="true">
+              <span style={{ width: `${activeCompletion}%` }} />
+            </div>
+          </div>
+          <div className="ops-card panel">
+            <span className="kicker">
+              <Download size={16} /> Crisis report
+            </span>
+            <button type="button" className="secondary-action report-action" onClick={exportReport}>
+              {busyAction === 'export' ? 'Preparing...' : 'Export JSON'} <ArrowUpRight size={17} />
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="scroll-lab" ref={flowRef}>
         <div className="frame-stage panel">
@@ -465,15 +615,46 @@ function App() {
           </div>
 
           <div className="situation-column">
+            <div className="filter-panel panel">
+              <label className="search-box">
+                <Search size={17} />
+                <input
+                  value={query}
+                  placeholder="Search issue, lokasi, source..."
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+              </label>
+              <div className="filter-row" aria-label="Risk level filter">
+                <Filter size={16} />
+                {filterLevels.map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    className={levelFilter === level ? 'active' : ''}
+                    onClick={() => setLevelFilter(level)}
+                  >
+                    {level === 'all' ? 'All' : levelLabels[level]}
+                  </button>
+                ))}
+              </div>
+              <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as 'all' | Category)}>
+                <option value="all">All categories</option>
+                {Object.entries(categoryLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="situation-list">
               <AnimatePresence initial={false}>
-                {dashboard.situations.map((situation) => (
+                {filteredSituations.map((situation) => (
                   <motion.button
                     layout
                     key={situation.id}
                     type="button"
                     className={`situation-card panel ${activeSituation?.id === situation.id ? 'active' : ''}`}
-                    onClick={() => setActiveId(situation.id)}
+                    onClick={() => selectSituation(situation.id)}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.97 }}
@@ -489,6 +670,13 @@ function App() {
                   </motion.button>
                 ))}
               </AnimatePresence>
+              {filteredSituations.length === 0 && (
+                <div className="empty-state panel">
+                  <Eye size={20} />
+                  <strong>No matching crisis signal</strong>
+                  <span>Ubah filter atau jalankan scenario simulator.</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -496,6 +684,30 @@ function App() {
 
       {activeSituation && (
         <section className="response-grid" id="response">
+          <div className="breakdown-panel panel">
+            <div className="panel-title">
+              <Activity />
+              <div>
+                <strong>Risk score breakdown</strong>
+                <small>Kontribusi severity, velocity, credibility, reach, dan sentiment.</small>
+              </div>
+            </div>
+            {Object.entries(activeSituation.scoreBreakdown).map(([label, value]) => (
+              <div className="score-line" key={label}>
+                <span>{label}</span>
+                <strong>{value}</strong>
+                <div aria-hidden="true">
+                  <i style={{ width: `${Math.min(100, value * 3)}%` }} />
+                </div>
+              </div>
+            ))}
+            <div className="score-history" aria-label="Score history">
+              {activeSituation.scoreHistory.map((item) => (
+                <span key={item.time} style={{ height: `${Math.max(18, item.score)}%` }} title={`${item.score}`} />
+              ))}
+            </div>
+          </div>
+
           <div className="map-panel panel">
             <div className="panel-title">
               <MapPin />
@@ -514,10 +726,11 @@ function App() {
                     left: `${Math.min(86, Math.max(12, ((situation.lng - 106) / 8) * 74 + 16))}%`,
                     top: `${Math.min(84, Math.max(12, (Math.abs(situation.lat) / 9) * 68 + 8))}%`,
                   }}
-                  onClick={() => setActiveId(situation.id)}
+                  onClick={() => selectSituation(situation.id)}
                   animate={{ scale: situation.level === 'critical' ? [1, 1.12, 1] : 1 }}
                   transition={{ duration: 2.4, repeat: situation.level === 'critical' ? Infinity : 0 }}
                 >
+                  <i aria-hidden="true" />
                   <AlertTriangle size={18} />
                   <span>{situation.score}</span>
                 </motion.button>
@@ -537,10 +750,45 @@ function App() {
               <ShieldAlert />
               <strong>{activeSituation.nextAction.primary}</strong>
             </div>
-            {activeSituation.nextAction.steps.map((step, index) => (
-              <span className="step-line" key={step}>
-                <b>{index + 1}</b> {step}
-              </span>
+            {activeSituation.playbook.map((step, index) => (
+              <button
+                type="button"
+                className={`step-line checklist-line ${completedActions[`${activeSituation.id}-${step.id}`] ? 'done' : ''}`}
+                key={step.id}
+                onClick={() =>
+                  setCompletedActions((current) => ({
+                    ...current,
+                    [`${activeSituation.id}-${step.id}`]: !current[`${activeSituation.id}-${step.id}`],
+                  }))
+                }
+              >
+                <b>{completedActions[`${activeSituation.id}-${step.id}`] ? <CheckCircle2 size={16} /> : index + 1}</b>
+                <span>
+                  <strong>{step.label}</strong>
+                  <small>
+                    {step.owner} - ETA {step.eta} - {step.priority}
+                  </small>
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <div className="evidence-panel panel">
+            <div className="panel-title">
+              <Layers3 />
+              <div>
+                <strong>Source verification</strong>
+                <small>Evidence status dari sinyal yang membentuk incident.</small>
+              </div>
+            </div>
+            {activeSituation.evidence.map((item) => (
+              <div className={`evidence-item ${item.verification}`} key={item.id}>
+                <span>{item.verification.replace('_', ' ')}</span>
+                <strong>{item.title}</strong>
+                <small>
+                  {sourceLabels[item.source]} - credibility {item.credibility} - score {item.score}
+                </small>
+              </div>
             ))}
           </div>
 
@@ -610,6 +858,77 @@ function App() {
           </div>
         </section>
       )}
+
+      <AnimatePresence>
+        {detailOpen && activeSituation && (
+          <motion.aside
+            className="detail-drawer"
+            initial={{ x: '110%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '110%' }}
+            transition={{ type: 'spring', stiffness: 210, damping: 28 }}
+          >
+            <div className="drawer-head">
+              <span className={`risk-dot ${activeSituation.level}`} />
+              <div>
+                <strong>{activeSituation.title}</strong>
+                <small>
+                  {activeSituation.location} - {levelLabels[activeSituation.level]} - score {activeSituation.score}
+                </small>
+              </div>
+              <button type="button" className="icon-button" onClick={() => setDetailOpen(false)} aria-label="Close detail">
+                <X size={18} />
+              </button>
+            </div>
+            <p>{activeSituation.summary}</p>
+            <div className="drawer-actions">
+              <button type="button" className="primary-action" onClick={exportReport}>
+                <Download size={17} /> Export
+              </button>
+              <a className="secondary-action" href="#response" onClick={() => setDetailOpen(false)}>
+                Open response <ArrowUpRight size={17} />
+              </a>
+            </div>
+            <div className="drawer-grid">
+              <span>
+                <Gauge size={16} /> {activeSituation.score} risk
+              </span>
+              <span>
+                <RadioTower size={16} /> {activeSituation.signalCount} signals
+              </span>
+              <span>
+                <Globe2 size={16} /> {formatReach(activeSituation.reach)} reach
+              </span>
+            </div>
+            <div className="drawer-section">
+              <strong>Generated statement</strong>
+              <blockquote>{activeSituation.statement}</blockquote>
+            </div>
+            <div className="drawer-section">
+              <strong>Evidence</strong>
+              {activeSituation.evidence.map((item) => (
+                <span className="drawer-line" key={item.id}>
+                  <BadgeCheck size={15} /> {item.title} - {item.verification.replace('_', ' ')}
+                </span>
+              ))}
+            </div>
+            <div className="drawer-section">
+              <strong>Audit trail</strong>
+              {activeSituation.audit.length > 0 ? (
+                activeSituation.audit.map((item) => (
+                  <span className="drawer-line" key={item.id}>
+                    <FileText size={15} /> {item.reason}
+                  </span>
+                ))
+              ) : (
+                <span className="drawer-line">
+                  <FileText size={15} /> No audit event yet for this incident.
+                </span>
+              )}
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       <footer className="site-footer">
         <div className="footer-identity panel">
