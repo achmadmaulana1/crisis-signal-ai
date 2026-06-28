@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id
+  name      String
+  email     String   @unique
+  role      String
+  avatar    String
+  createdAt DateTime @default(now())
+}
+
+model Signal {
+  id          String   @id
+  source      String
+  title       String
+  location    String
+  lat         Float
+  lng         Float
+  category    String
+  severity    Int
+  velocity    Int
+  credibility Int
+  sentiment   Int
+  reach       Int
+  timestamp   DateTime
+  summary     String
+}
+
+model Team {
+  id     String @id
+  name   String
+  role   String
+  status String
+}
+
+model AuditLog {
+  id             String   @id
+  situationId    String
+  time           DateTime
+  reason         String
+  recommendation String
+}
+
+model ApprovalRequest {
+  id          String   @id
+  situationId String
+  statement   String
+  status      String
+  requestedBy String
+  reviewer    String
+  note        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PlaybookTask {
+  id          String   @id
+  situationId String
+  label       String
+  owner       String
+  eta         String
+  priority    String
+  status      String
+  updatedAt   DateTime @updatedAt
+}
+
+model LiveEvent {
+  id          String   @id
+  type        String
+  title       String
+  message     String
+  situationId String?
+  createdAt   DateTime @default(now())
+}
