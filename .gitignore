@@ -11,6 +11,14 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+prisma/dev.db
+prisma/dev.db-*
+*.sqlite
+*.sqlite3
+coverage
 
 # Editor directories and files
 .vscode/*
