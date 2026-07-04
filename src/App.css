@@ -56,6 +56,7 @@
 .alert-strip,
 .metrics-strip,
 .ops-deck,
+.operating-grid,
 .scroll-lab,
 .monitor,
 .response-grid,
@@ -102,6 +103,7 @@
 .alert-strip,
 .metrics-strip,
 .ops-deck,
+.operating-grid,
 .scroll-lab,
 .monitor,
 .response-grid,
@@ -169,6 +171,28 @@
   gap: 8px;
 }
 
+.role-switcher {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  color: #111317;
+  background: var(--green);
+  box-shadow: 4px 4px 0 var(--shadow);
+  font-weight: 900;
+}
+
+.role-switcher select {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 1000;
+  outline: none;
+}
+
 .nav-actions a,
 .primary-action,
 .secondary-action,
@@ -187,6 +211,13 @@
     transform 160ms ease,
     box-shadow 160ms ease,
     background 160ms ease;
+}
+
+.primary-action:disabled,
+.secondary-action:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .nav-actions a,
@@ -527,6 +558,136 @@
 
 .report-action {
   width: fit-content;
+}
+
+.report-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.operating-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.62fr);
+  gap: 18px;
+  padding: 8px 0 32px;
+}
+
+.approval-panel,
+.live-panel {
+  padding: 20px;
+}
+
+.approval-current {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.approval-current > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  color: #111317;
+  background: var(--green);
+  box-shadow: 3px 3px 0 var(--shadow);
+  font-weight: 1000;
+}
+
+.approval-current strong,
+.approval-current small,
+.approval-item strong,
+.approval-item small {
+  display: block;
+}
+
+.approval-current small,
+.approval-item small,
+.approval-empty,
+.live-event small {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.approval-list,
+.live-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.approval-empty,
+.approval-item,
+.live-event {
+  padding: 12px;
+  border: 2px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.approval-item {
+  display: grid;
+  gap: 8px;
+}
+
+.approval-item > span,
+.live-event span {
+  width: fit-content;
+  padding: 4px 7px;
+  border: 2px solid var(--line);
+  color: #111317;
+  background: var(--amber);
+  box-shadow: 3px 3px 0 var(--shadow);
+  font-size: 0.72rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.approval-item.approved > span,
+.approval-item.published > span {
+  background: var(--green);
+}
+
+.approval-item.rejected > span {
+  color: var(--ink);
+  background: var(--red);
+}
+
+.approval-item > div {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.approval-item button {
+  min-height: 36px;
+  border: 2px solid var(--line);
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: 3px 3px 0 var(--shadow);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.live-event {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.live-event:hover {
+  transform: translateX(3px);
+  background: color-mix(in srgb, var(--cyan) 14%, var(--panel-strong));
 }
 
 .scroll-lab {
@@ -1374,6 +1535,7 @@
 @media (max-width: 980px) {
   .hero-grid,
   .ops-deck,
+  .operating-grid,
   .monitor-grid,
   .response-grid {
     grid-template-columns: 1fr;
@@ -1410,6 +1572,7 @@
   .alert-strip,
   .metrics-strip,
   .ops-deck,
+  .operating-grid,
   .scroll-lab,
   .monitor,
   .response-grid,
@@ -1434,7 +1597,7 @@
   }
 
   .nav-actions {
-    grid-template-columns: 1fr 1fr 46px;
+    grid-template-columns: 1fr 1fr 1fr 46px;
   }
 
   .command-card,
@@ -1450,8 +1613,14 @@
 
   .breakdown-panel,
   .filter-panel,
-  .evidence-panel {
+  .evidence-panel,
+  .approval-panel,
+  .live-panel {
     padding: 16px;
+  }
+
+  .approval-current {
+    grid-template-columns: 1fr;
   }
 
   .frame-stage {

@@ -21,6 +21,7 @@ import {
   History,
   Layers3,
   ListChecks,
+  LockKeyhole,
   MapPin,
   Maximize2,
   Megaphone,
@@ -29,6 +30,7 @@ import {
   Play,
   RadioTower,
   Search,
+  Send,
   RefreshCcw,
   Server,
   ShieldAlert,
@@ -44,8 +46,19 @@ import {
   useSpring,
   useTransform,
 } from 'framer-motion'
-import { getDashboard, getSituationReport, ingestSignal, resetDemo, simulateScenario } from './lib/api'
-import type { Category, Dashboard, RiskLevel, Signal, Situation, Source } from './lib/types'
+import {
+  createApproval,
+  getDashboard,
+  getLiveEvents,
+  getSituationReport,
+  ingestSignal,
+  loginRole,
+  pdfReportUrl,
+  resetDemo,
+  simulateScenario,
+  updateApproval,
+} from './lib/api'
+import type { ApprovalRequest, Category, Dashboard, LiveEvent, RiskLevel, Signal, Situation, Source, User, UserRole } from './lib/types'
 import './App.css'
 
 type Theme = 'dark' | 'light'
@@ -89,6 +102,13 @@ const scenarioOptions: Array<{ id: 'flood' | 'scam' | 'crowd'; label: string }> 
   { id: 'scam', label: 'Scam spike' },
   { id: 'crowd', label: 'Crowd risk' },
 ]
+const roleOptions: Array<{ role: UserRole; label: string }> = [
+  { role: 'admin', label: 'Admin' },
+  { role: 'analyst', label: 'Analyst' },
+  { role: 'comms', label: 'Comms' },
+  { role: 'field_verifier', label: 'Field' },
+  { role: 'viewer', label: 'Viewer' },
+]
 
 const seedForm = {
   source: 'citizen_report' as Source,
@@ -128,6 +148,8 @@ function App() {
   const [commandMode, setCommandMode] = useState(false)
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
   const [busyAction, setBusyAction] = useState('')
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([])
   const flowRef = useRef<HTMLDivElement>(null)
   const preloadedFrames = useRef<HTMLImageElement[]>([])
   const frameProgressValue = useMotionValue(0)
@@ -202,9 +224,21 @@ function App() {
       .then((data) => {
         setDashboard(data)
         setActiveId(data.situations[0]?.id ?? 'weather_extreme')
+        setCurrentUser(data.users[0] ?? null)
+        setLiveEvents(data.liveEvents ?? [])
       })
       .catch((reason: Error) => setError(reason.message))
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      getLiveEvents()
+        .then(setLiveEvents)
+        .catch(() => undefined)
+    }, 5000)
+
+    return () => window.clearInterval(timer)
   }, [])
 
   const activeSituation = useMemo<Situation | undefined>(
@@ -232,6 +266,10 @@ function App() {
     const done = activeSituation.playbook.filter((item) => completedActions[`${activeSituation.id}-${item.id}`]).length
     return Math.round((done / activeSituation.playbook.length) * 100)
   }, [activeSituation, completedActions])
+  const activeApprovals = useMemo(
+    () => (dashboard?.approvals ?? []).filter((approval) => approval.situationId === activeSituation?.id),
+    [activeSituation?.id, dashboard?.approvals],
+  )
 
   async function submitSignal() {
     const result = await ingestSignal(form as Partial<Signal>)
@@ -280,6 +318,58 @@ function App() {
     setDetailOpen(openDrawer)
   }
 
+  async function switchRole(role: UserRole) {
+    setBusyAction(role)
+    try {
+      const result = await loginRole(role)
+      setCurrentUser(result.user)
+      setLiveEvents(await getLiveEvents())
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function requestApproval() {
+    if (!activeSituation || !currentUser) return
+    setBusyAction('approval')
+    try {
+      const approval = await createApproval({
+        situationId: activeSituation.id,
+        statement: activeSituation.statement,
+        requestedBy: currentUser.role,
+      })
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              approvals: [approval, ...current.approvals.filter((item) => item.id !== approval.id)],
+            }
+          : current,
+      )
+      setLiveEvents(await getLiveEvents())
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function changeApproval(approval: ApprovalRequest, status: ApprovalRequest['status']) {
+    setBusyAction(approval.id)
+    try {
+      const next = await updateApproval(approval.id, status, `Updated by ${currentUser?.role ?? 'operator'}.`)
+      setDashboard((current) =>
+        current
+          ? {
+              ...current,
+              approvals: current.approvals.map((item) => (item.id === next.id ? next : item)),
+            }
+          : current,
+      )
+      setLiveEvents(await getLiveEvents())
+    } finally {
+      setBusyAction('')
+    }
+  }
+
   if (loading) {
     return (
       <main className="app status-shell" data-theme={theme}>
@@ -316,6 +406,20 @@ function App() {
             </span>
           </a>
           <div className="nav-actions">
+            <div className="role-switcher" title="Demo role session">
+              <LockKeyhole size={15} />
+              <select
+                value={currentUser?.role ?? 'admin'}
+                onChange={(event) => switchRole(event.target.value as UserRole)}
+                aria-label="Switch role"
+              >
+                {roleOptions.map((item) => (
+                  <option key={item.role} value={item.role}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="button"
               className="nav-command"
@@ -466,9 +570,105 @@ function App() {
             <span className="kicker">
               <Download size={16} /> Crisis report
             </span>
-            <button type="button" className="secondary-action report-action" onClick={exportReport}>
-              {busyAction === 'export' ? 'Preparing...' : 'Export JSON'} <ArrowUpRight size={17} />
-            </button>
+            <div className="report-row">
+              <button type="button" className="secondary-action report-action" onClick={exportReport}>
+                {busyAction === 'export' ? 'Preparing...' : 'JSON'} <ArrowUpRight size={17} />
+              </button>
+              <a className="primary-action report-action" href={pdfReportUrl(activeSituation.id)}>
+                PDF <Download size={17} />
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {activeSituation && (
+        <section className="operating-grid">
+          <div className="approval-panel panel">
+            <div className="panel-title">
+              <Send />
+              <div>
+                <strong>Statement approval workflow</strong>
+                <small>Draft, review, approved, published, rejected.</small>
+              </div>
+            </div>
+            <div className="approval-current">
+              <span>{currentUser?.avatar ?? 'CS'}</span>
+              <div>
+                <strong>{currentUser?.name ?? 'Demo operator'}</strong>
+                <small>{currentUser?.role ?? 'admin'} session</small>
+              </div>
+              <button
+                type="button"
+                className="primary-action"
+                onClick={requestApproval}
+                disabled={currentUser?.role === 'viewer' || busyAction === 'approval'}
+              >
+                {busyAction === 'approval' ? 'Sending...' : 'Send review'}
+              </button>
+            </div>
+            <div className="approval-list">
+              {activeApprovals.length === 0 ? (
+                <span className="approval-empty">Belum ada approval untuk incident ini.</span>
+              ) : (
+                activeApprovals.map((approval) => (
+                  <div className={`approval-item ${approval.status}`} key={approval.id}>
+                    <span>{approval.status}</span>
+                    <strong>{approval.statement}</strong>
+                    <small>
+                      {approval.requestedBy} to {approval.reviewer} - {approval.note}
+                    </small>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => changeApproval(approval, 'approved')}
+                        disabled={busyAction === approval.id || currentUser?.role === 'viewer'}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeApproval(approval, 'published')}
+                        disabled={busyAction === approval.id || currentUser?.role === 'viewer'}
+                      >
+                        Publish
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => changeApproval(approval, 'rejected')}
+                        disabled={busyAction === approval.id || currentUser?.role === 'viewer'}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div className="live-panel panel">
+            <div className="panel-title">
+              <RadioTower />
+              <div>
+                <strong>Live command feed</strong>
+                <small>Polling 5 detik dari Prisma live events.</small>
+              </div>
+            </div>
+            <div className="live-list">
+              {liveEvents.slice(0, 8).map((event) => (
+                <button
+                  type="button"
+                  className="live-event"
+                  key={event.id}
+                  onClick={() => event.situationId && selectSituation(event.situationId)}
+                >
+                  <span>{event.type}</span>
+                  <strong>{event.title}</strong>
+                  <small>{event.message}</small>
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       )}

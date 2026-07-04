@@ -23,7 +23,7 @@ export function scoreBreakdown(signal) {
   }
 }
 
-export function clusterSituations(signals, auditTrail = []) {
+export function clusterSituations(signals, auditTrail = [], playbookTasks = []) {
   const grouped = signals.reduce((acc, signal) => {
     acc[signal.category] ||= []
     acc[signal.category].push(signal)
@@ -62,7 +62,7 @@ export function clusterSituations(signals, auditTrail = []) {
         summary: summarizeSituation(category, items, score),
         nextAction: recommendAction(category, score, items),
         statement: generateStatement(category, score, peak.location),
-        playbook: buildPlaybook(category, score),
+        playbook: buildPlaybook(category, score, playbookTasks.filter((task) => task.situationId === category)),
         timeline,
         audit: auditTrail.filter((entry) => entry.situationId === category),
         evidence: items.map((item) => ({
@@ -110,7 +110,7 @@ export function ingestSignal(db, input) {
 }
 
 export function dashboardSummary(db) {
-  const situations = clusterSituations(db.signals, db.auditTrail)
+  const situations = clusterSituations(db.signals, db.auditTrail, db.playbookTasks)
   const critical = situations.filter((item) => item.level === 'critical').length
   const high = situations.filter((item) => item.level === 'high').length
   const avgRisk = Math.round(
@@ -132,13 +132,16 @@ export function dashboardSummary(db) {
     situations,
     alerts: buildAlerts(situations),
     playbooks: buildPlaybookCatalog(),
+    users: db.users || [],
+    approvals: db.approvals || [],
+    liveEvents: db.liveEvents || [],
     teams: db.teams,
     latestAudit: db.auditTrail.slice(0, 8),
   }
 }
 
 export function buildReport(db, situationId) {
-  const situation = clusterSituations(db.signals, db.auditTrail).find((item) => item.id === situationId)
+  const situation = clusterSituations(db.signals, db.auditTrail, db.playbookTasks).find((item) => item.id === situationId)
   if (!situation) return null
 
   return {
@@ -301,7 +304,7 @@ function verificationStatus(signal) {
   return 'unverified'
 }
 
-function buildPlaybook(category, score) {
+function buildPlaybook(category, score, savedTasks = []) {
   const action = recommendAction(category, score, [])
   return action.steps.map((step, index) => ({
     id: `${category}-${index + 1}`,
@@ -309,6 +312,7 @@ function buildPlaybook(category, score) {
     owner: index % 3 === 0 ? 'Ops lead' : index % 3 === 1 ? 'Comms' : 'Verification',
     eta: index < 2 ? '15m' : '30m',
     priority: index < 2 ? 'high' : 'normal',
+    status: savedTasks.find((task) => task.id === `${category}-${index + 1}` || task.label === step)?.status || 'open',
   }))
 }
 

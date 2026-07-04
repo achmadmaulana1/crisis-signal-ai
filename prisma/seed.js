@@ -2,9 +2,14 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PrismaClient } from '@prisma/client'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 
-const prisma = new PrismaClient()
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const adapter = new PrismaBetterSqlite3(
+  { url: path.join(__dirname, 'dev.db') },
+  { timestampFormat: 'iso8601' },
+)
+const prisma = new PrismaClient({ adapter })
 const seedPath = path.join(__dirname, '..', 'server', 'data', 'crisis-db.json')
 
 const users = [
@@ -35,6 +40,13 @@ const users = [
     email: 'field@crisissignal.ai',
     role: 'field_verifier',
     avatar: 'DF',
+  },
+  {
+    id: 'user-viewer',
+    name: 'Vina Viewer',
+    email: 'viewer@crisissignal.ai',
+    role: 'viewer',
+    avatar: 'VV',
   },
 ]
 

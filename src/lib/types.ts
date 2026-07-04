@@ -9,6 +9,7 @@ export type Category =
   | 'social_conflict'
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type VerificationStatus = 'confirmed' | 'needs_review' | 'unverified'
+export type UserRole = 'admin' | 'analyst' | 'comms' | 'field_verifier' | 'viewer'
 
 export type Signal = {
   id: string
@@ -56,6 +57,7 @@ export type Situation = {
     owner: string
     eta: string
     priority: 'high' | 'normal'
+    status: 'open' | 'done' | 'blocked'
   }>
   timeline: Array<{
     id: string
@@ -89,6 +91,36 @@ export type Team = {
   status: string
 }
 
+export type User = {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  avatar: string
+  createdAt: string
+}
+
+export type ApprovalRequest = {
+  id: string
+  situationId: Category
+  statement: string
+  status: 'draft' | 'review' | 'approved' | 'published' | 'rejected'
+  requestedBy: string
+  reviewer: string
+  note: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type LiveEvent = {
+  id: string
+  type: string
+  title: string
+  message: string
+  situationId: Category | null
+  createdAt: string
+}
+
 export type Dashboard = {
   repoName: string
   description: string
@@ -113,6 +145,9 @@ export type Dashboard = {
     title: string
     actions: Situation['playbook']
   }>
+  users: User[]
+  approvals: ApprovalRequest[]
+  liveEvents: LiveEvent[]
   teams: Team[]
   latestAudit: Situation['audit']
 }
