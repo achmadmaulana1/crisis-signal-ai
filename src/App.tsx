@@ -19,6 +19,7 @@ import {
   Globe2,
   Handshake,
   History,
+  Languages,
   Layers3,
   ListChecks,
   LockKeyhole,
@@ -62,11 +63,316 @@ import type { ApprovalRequest, Category, Dashboard, LiveEvent, RiskLevel, Signal
 import './App.css'
 
 type Theme = 'dark' | 'light'
+type Language = 'id' | 'en' | 'ms' | 'ja' | 'ar'
 
 const repoName = 'crisis-signal-ai'
-const repoDescription =
-  'Fullstack AI crisis agent for real-time signals, risk scoring, crisis maps, auto timelines, action recommendations, generated statements, collaboration, and audit trails.'
 const totalFrames = 320
+
+const languageOptions: Array<{ code: Language; label: string; short: string }> = [
+  { code: 'id', label: 'Indonesia', short: 'ID' },
+  { code: 'en', label: 'English', short: 'EN' },
+  { code: 'ms', label: 'Melayu', short: 'MS' },
+  { code: 'ja', label: 'Japanese', short: 'JA' },
+  { code: 'ar', label: 'Arabic', short: 'AR' },
+]
+
+const copy = {
+  id: {
+    navMonitor: 'Monitor',
+    navResponse: 'Respons',
+    command: 'Command',
+    theme: 'Ganti tema',
+    heroTitle: 'Jangan tunggu krisis viral dulu.',
+    heroDescription:
+      'AI crisis operating system untuk membaca sinyal awal, menghitung risiko, mengatur tim, menyiapkan statement, dan menjaga jejak keputusan.',
+    openSignalRoom: 'Buka signal room',
+    viewRecommendation: 'Lihat rekomendasi',
+    situationSummary: 'Ringkasan situasi AI',
+    metrics: ['sinyal dipantau', 'situasi aktif', 'risiko tinggi', 'jangkauan publik'],
+    avg: 'Rata',
+    critical: 'kritis',
+    scenario: 'Simulator skenario',
+    running: 'Berjalan...',
+    playbook: 'Progress playbook',
+    report: 'Laporan krisis',
+    preparing: 'Menyiapkan...',
+    warRoom: 'Crisis war room',
+    readiness: 'kesiapan',
+    teamReady: 'tim siap',
+    approvalsOpen: 'approval terbuka',
+    freshEvents: 'event baru',
+    topLane: 'Lane operasional utama',
+    laneHint: 'Pilih incident untuk melihat kesiapan respons.',
+    minutesOpen: 'menit berjalan',
+    evidenceHealth: 'Kesehatan bukti',
+    slaPressure: 'Tekanan SLA',
+    nextMove: 'Langkah operasional berikutnya',
+    nextMoveHint: 'Keputusan ringkas dari readiness, evidence, SLA, dan approval.',
+    monitoring: 'Monitoring real-time',
+    monitoringTitle: 'Signal intake, risk engine, dan peta krisis dalam satu sistem.',
+    signalIntake: 'Signal intake',
+    signalIntakeHint: 'Berita, RSS, social media, weather API, dan laporan warga.',
+    title: 'Judul sinyal',
+    source: 'Source',
+    category: 'Kategori',
+    location: 'Lokasi',
+    addSignal: 'Tambah sinyal',
+    search: 'Cari incident, lokasi, kategori...',
+    riskBreakdown: 'Rincian risk score',
+    crisisMap: 'Peta krisis',
+    whatNext: 'Apa langkah berikutnya?',
+    sourceVerification: 'Verifikasi sumber',
+    statement: 'Statement otomatis',
+    timeline: 'Timeline otomatis',
+    collaboration: 'Ruang kolaborasi',
+    audit: 'Audit trail',
+    approvalTitle: 'Workflow approval statement',
+    approvalHint: 'Draft, review, approved, published, rejected.',
+    noApproval: 'Belum ada approval untuk incident ini.',
+    sendReview: 'Kirim review',
+    liveFeed: 'Live command feed',
+    liveFeedHint: 'Polling 5 detik dari Prisma live events.',
+    languageHint: 'Bahasa interface aktif',
+    levels: { low: 'Rendah', medium: 'Sedang', high: 'Tinggi', critical: 'Kritis' },
+    filters: { all: 'Semua', critical: 'Kritis', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' },
+  },
+  en: {
+    navMonitor: 'Monitor',
+    navResponse: 'Response',
+    command: 'Command',
+    theme: 'Switch theme',
+    heroTitle: 'Do not wait until a crisis goes viral.',
+    heroDescription:
+      'An AI crisis operating system that reads early signals, scores risk, coordinates teams, prepares statements, and preserves decision trails.',
+    openSignalRoom: 'Open signal room',
+    viewRecommendation: 'View recommendations',
+    situationSummary: 'AI situation summary',
+    metrics: ['signals monitored', 'active situations', 'high risk', 'public reach'],
+    avg: 'Avg',
+    critical: 'critical',
+    scenario: 'Scenario simulator',
+    running: 'Running...',
+    playbook: 'Playbook progress',
+    report: 'Crisis report',
+    preparing: 'Preparing...',
+    warRoom: 'Crisis war room',
+    readiness: 'readiness',
+    teamReady: 'team ready',
+    approvalsOpen: 'approvals open',
+    freshEvents: 'fresh events',
+    topLane: 'Top operating lane',
+    laneHint: 'Select an incident to inspect response readiness.',
+    minutesOpen: 'minutes open',
+    evidenceHealth: 'Evidence health',
+    slaPressure: 'SLA pressure',
+    nextMove: 'Next operational move',
+    nextMoveHint: 'A compact decision from readiness, evidence, SLA, and approval status.',
+    monitoring: 'Real-time monitoring',
+    monitoringTitle: 'Signal intake, risk engine, and crisis map in one system.',
+    signalIntake: 'Signal intake',
+    signalIntakeHint: 'News, RSS, social media, weather API, and citizen reports.',
+    title: 'Signal title',
+    source: 'Source',
+    category: 'Category',
+    location: 'Location',
+    addSignal: 'Add signal',
+    search: 'Search incident, location, category...',
+    riskBreakdown: 'Risk score breakdown',
+    crisisMap: 'Crisis map',
+    whatNext: 'What should we do next?',
+    sourceVerification: 'Source verification',
+    statement: 'Auto-generated statement',
+    timeline: 'Auto timeline',
+    collaboration: 'Collaboration room',
+    audit: 'Audit trail',
+    approvalTitle: 'Statement approval workflow',
+    approvalHint: 'Draft, review, approved, published, rejected.',
+    noApproval: 'No approval yet for this incident.',
+    sendReview: 'Send review',
+    liveFeed: 'Live command feed',
+    liveFeedHint: 'Polling every 5 seconds from Prisma live events.',
+    languageHint: 'Active interface language',
+    levels: { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' },
+    filters: { all: 'All', critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
+  },
+  ms: {
+    navMonitor: 'Pantau',
+    navResponse: 'Respons',
+    command: 'Command',
+    theme: 'Tukar tema',
+    heroTitle: 'Jangan tunggu krisis menjadi viral.',
+    heroDescription:
+      'Sistem operasi krisis AI untuk membaca sinyal awal, menilai risiko, menyelaras pasukan, menyiapkan kenyataan, dan menyimpan jejak keputusan.',
+    openSignalRoom: 'Buka bilik sinyal',
+    viewRecommendation: 'Lihat cadangan',
+    situationSummary: 'Ringkasan situasi AI',
+    metrics: ['sinyal dipantau', 'situasi aktif', 'risiko tinggi', 'jangkauan awam'],
+    avg: 'Purata',
+    critical: 'kritikal',
+    scenario: 'Simulator senario',
+    running: 'Berjalan...',
+    playbook: 'Kemajuan playbook',
+    report: 'Laporan krisis',
+    preparing: 'Menyediakan...',
+    warRoom: 'Bilik krisis',
+    readiness: 'kesiapan',
+    teamReady: 'pasukan siap',
+    approvalsOpen: 'approval terbuka',
+    freshEvents: 'event baru',
+    topLane: 'Lane operasi utama',
+    laneHint: 'Pilih insiden untuk melihat kesiapan respons.',
+    minutesOpen: 'minit berjalan',
+    evidenceHealth: 'Kualiti bukti',
+    slaPressure: 'Tekanan SLA',
+    nextMove: 'Langkah operasi seterusnya',
+    nextMoveHint: 'Keputusan ringkas dari kesiapan, bukti, SLA, dan approval.',
+    monitoring: 'Pemantauan real-time',
+    monitoringTitle: 'Signal intake, risk engine, dan peta krisis dalam satu sistem.',
+    signalIntake: 'Signal intake',
+    signalIntakeHint: 'Berita, RSS, media sosial, weather API, dan laporan warga.',
+    title: 'Tajuk sinyal',
+    source: 'Source',
+    category: 'Kategori',
+    location: 'Lokasi',
+    addSignal: 'Tambah sinyal',
+    search: 'Cari insiden, lokasi, kategori...',
+    riskBreakdown: 'Rincian risk score',
+    crisisMap: 'Peta krisis',
+    whatNext: 'Apa langkah seterusnya?',
+    sourceVerification: 'Pengesahan sumber',
+    statement: 'Statement automatik',
+    timeline: 'Timeline automatik',
+    collaboration: 'Ruang kolaborasi',
+    audit: 'Audit trail',
+    approvalTitle: 'Workflow approval statement',
+    approvalHint: 'Draft, review, approved, published, rejected.',
+    noApproval: 'Belum ada approval untuk insiden ini.',
+    sendReview: 'Hantar review',
+    liveFeed: 'Live command feed',
+    liveFeedHint: 'Polling 5 saat dari Prisma live events.',
+    languageHint: 'Bahasa interface aktif',
+    levels: { low: 'Rendah', medium: 'Sedang', high: 'Tinggi', critical: 'Kritikal' },
+    filters: { all: 'Semua', critical: 'Kritikal', high: 'Tinggi', medium: 'Sedang', low: 'Rendah' },
+  },
+  ja: {
+    navMonitor: '監視',
+    navResponse: '対応',
+    command: 'Command',
+    theme: 'テーマ切替',
+    heroTitle: '危機が拡散する前に動く。',
+    heroDescription:
+      '初期シグナルを読み、リスクを採点し、チームを調整し、声明と監査記録を整えるAI危機対応OS。',
+    openSignalRoom: 'シグナル室を開く',
+    viewRecommendation: '推奨を見る',
+    situationSummary: 'AI状況要約',
+    metrics: ['監視シグナル', '進行中の状況', '高リスク', '到達範囲'],
+    avg: '平均',
+    critical: '重大',
+    scenario: 'シナリオ',
+    running: '実行中...',
+    playbook: 'プレイブック進捗',
+    report: '危機レポート',
+    preparing: '準備中...',
+    warRoom: '危機司令室',
+    readiness: '準備度',
+    teamReady: 'チーム準備',
+    approvalsOpen: '未完了承認',
+    freshEvents: '新規イベント',
+    topLane: '主要オペレーション',
+    laneHint: 'インシデントを選択して対応準備を確認。',
+    minutesOpen: '分経過',
+    evidenceHealth: '証拠健全性',
+    slaPressure: 'SLA圧力',
+    nextMove: '次の対応',
+    nextMoveHint: '準備度、証拠、SLA、承認から判断。',
+    monitoring: 'リアルタイム監視',
+    monitoringTitle: 'シグナル入力、リスクエンジン、危機マップを一つに。',
+    signalIntake: 'シグナル入力',
+    signalIntakeHint: 'ニュース、RSS、SNS、天気API、市民報告。',
+    title: 'シグナル名',
+    source: 'Source',
+    category: 'カテゴリ',
+    location: '場所',
+    addSignal: '追加',
+    search: '検索...',
+    riskBreakdown: 'リスク内訳',
+    crisisMap: '危機マップ',
+    whatNext: '次に何をする?',
+    sourceVerification: 'ソース確認',
+    statement: '自動声明',
+    timeline: '自動タイムライン',
+    collaboration: '協業ルーム',
+    audit: '監査記録',
+    approvalTitle: '声明承認フロー',
+    approvalHint: 'Draft, review, approved, published, rejected.',
+    noApproval: 'このインシデントの承認はありません。',
+    sendReview: 'レビュー送信',
+    liveFeed: 'ライブ指令フィード',
+    liveFeedHint: 'Prisma live eventsを5秒ごとに取得。',
+    languageHint: '現在の表示言語',
+    levels: { low: '低', medium: '中', high: '高', critical: '重大' },
+    filters: { all: 'すべて', critical: '重大', high: '高', medium: '中', low: '低' },
+  },
+  ar: {
+    navMonitor: 'المراقبة',
+    navResponse: 'الاستجابة',
+    command: 'Command',
+    theme: 'تبديل النمط',
+    heroTitle: 'لا تنتظر حتى تنتشر الأزمة.',
+    heroDescription:
+      'نظام تشغيل أزمات بالذكاء الاصطناعي يقرأ الإشارات المبكرة، يقيم المخاطر، ينسق الفرق، ويجهز البيانات وسجل القرارات.',
+    openSignalRoom: 'افتح غرفة الإشارات',
+    viewRecommendation: 'عرض التوصيات',
+    situationSummary: 'ملخص الموقف',
+    metrics: ['إشارات مراقبة', 'حالات نشطة', 'خطر مرتفع', 'وصول عام'],
+    avg: 'متوسط',
+    critical: 'حرج',
+    scenario: 'محاكي السيناريو',
+    running: 'يعمل...',
+    playbook: 'تقدم الخطة',
+    report: 'تقرير الأزمة',
+    preparing: 'جار التحضير...',
+    warRoom: 'غرفة الأزمة',
+    readiness: 'الجاهزية',
+    teamReady: 'جاهزية الفريق',
+    approvalsOpen: 'موافقات مفتوحة',
+    freshEvents: 'أحداث جديدة',
+    topLane: 'مسار التشغيل الرئيسي',
+    laneHint: 'اختر حادثة لفحص جاهزية الاستجابة.',
+    minutesOpen: 'دقائق مفتوحة',
+    evidenceHealth: 'صحة الأدلة',
+    slaPressure: 'ضغط SLA',
+    nextMove: 'الخطوة التالية',
+    nextMoveHint: 'قرار مختصر من الجاهزية والأدلة وSLA والموافقة.',
+    monitoring: 'مراقبة فورية',
+    monitoringTitle: 'إدخال الإشارات، محرك المخاطر، وخريطة الأزمة في نظام واحد.',
+    signalIntake: 'إدخال الإشارة',
+    signalIntakeHint: 'أخبار، RSS، وسائل اجتماعية، طقس، وتقارير مواطنين.',
+    title: 'عنوان الإشارة',
+    source: 'Source',
+    category: 'الفئة',
+    location: 'الموقع',
+    addSignal: 'إضافة إشارة',
+    search: 'بحث...',
+    riskBreakdown: 'تفصيل المخاطر',
+    crisisMap: 'خريطة الأزمة',
+    whatNext: 'ما الخطوة التالية؟',
+    sourceVerification: 'تحقق المصدر',
+    statement: 'بيان تلقائي',
+    timeline: 'خط زمني تلقائي',
+    collaboration: 'غرفة التعاون',
+    audit: 'سجل التدقيق',
+    approvalTitle: 'مسار موافقة البيان',
+    approvalHint: 'Draft, review, approved, published, rejected.',
+    noApproval: 'لا توجد موافقة لهذه الحادثة.',
+    sendReview: 'إرسال للمراجعة',
+    liveFeed: 'تغذية الأوامر',
+    liveFeedHint: 'تحديث كل 5 ثوان من Prisma live events.',
+    languageHint: 'لغة الواجهة الحالية',
+    levels: { low: 'منخفض', medium: 'متوسط', high: 'مرتفع', critical: 'حرج' },
+    filters: { all: 'الكل', critical: 'حرج', high: 'مرتفع', medium: 'متوسط', low: 'منخفض' },
+  },
+} as const
 
 const sourceLabels: Record<Source, string> = {
   news: 'News',
@@ -87,13 +393,6 @@ const categoryLabels: Record<Category, string> = {
   supply_disruption: 'Supply disruption',
   brand_issue: 'Brand issue',
   social_conflict: 'Social conflict',
-}
-
-const levelLabels = {
-  low: 'Rendah',
-  medium: 'Sedang',
-  high: 'Tinggi',
-  critical: 'Kritis',
 }
 
 const filterLevels: Array<'all' | RiskLevel> = ['all', 'critical', 'high', 'medium', 'low']
@@ -135,6 +434,10 @@ function formatReach(value: number) {
 
 function App() {
   const [theme, setTheme] = useState<Theme>('dark')
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = window.localStorage.getItem('crisis-signal-language') as Language | null
+    return saved && saved in copy ? saved : 'id'
+  })
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [activeId, setActiveId] = useState<Category>('weather_extreme')
   const [frame, setFrame] = useState(0)
@@ -161,6 +464,15 @@ function App() {
   const cursorY = useMotionValue(-120)
   const smoothCursorX = useSpring(cursorX, { stiffness: 220, damping: 34, mass: 0.32 })
   const smoothCursorY = useSpring(cursorY, { stiffness: 220, damping: 34, mass: 0.32 })
+  const t = copy[language]
+  const levelLabels = t.levels
+  const activeLanguage = languageOptions.find((item) => item.code === language) ?? languageOptions[0]
+
+  useEffect(() => {
+    window.localStorage.setItem('crisis-signal-language', language)
+    document.documentElement.lang = language
+    document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr'
+  }, [language])
 
   useEffect(() => {
     let animationId = 0
@@ -410,6 +722,21 @@ function App() {
             </span>
           </a>
           <div className="nav-actions">
+            <div className="language-switcher" title={t.languageHint}>
+              <Languages size={15} />
+              <span>{activeLanguage.short}</span>
+              <select
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+                aria-label={t.languageHint}
+              >
+                {languageOptions.map((item) => (
+                  <option key={item.code} value={item.code}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div className="role-switcher" title="Demo role session">
               <LockKeyhole size={15} />
               <select
@@ -431,15 +758,15 @@ function App() {
               title="Command center"
             >
               {commandMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-              Command
+              {t.command}
             </button>
-            <a href="#monitor">Monitor</a>
-            <a href="#response">Response</a>
+            <a href="#monitor">{t.navMonitor}</a>
+            <a href="#response">{t.navResponse}</a>
             <button
               type="button"
               className="icon-button"
-              aria-label="Ganti tema"
-              title="Ganti tema"
+              aria-label={t.theme}
+              title={t.theme}
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
@@ -454,14 +781,14 @@ function App() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
           >
-            <h1>Jangan tunggu krisis viral dulu.</h1>
-            <p>{repoDescription}</p>
+            <h1>{t.heroTitle}</h1>
+            <p>{t.heroDescription}</p>
             <div className="hero-actions">
               <a className="primary-action" href="#monitor">
-                Buka signal room <RadioTower size={18} />
+                {t.openSignalRoom} <RadioTower size={18} />
               </a>
               <a className="secondary-action" href="#response">
-                Lihat rekomendasi <ArrowUpRight size={18} />
+                {t.viewRecommendation} <ArrowUpRight size={18} />
               </a>
             </div>
           </motion.div>
@@ -474,7 +801,7 @@ function App() {
           >
             <div className="command-head">
               <div>
-                <span>AI situation summary</span>
+                <span>{t.situationSummary}</span>
                 <strong>{activeSituation?.title}</strong>
               </div>
               <Siren />
@@ -490,10 +817,10 @@ function App() {
             </div>
             <div className="command-metrics">
               <span>
-                <Gauge size={17} /> Avg {dashboard.stats.avgRisk}
+                <Gauge size={17} /> {t.avg} {dashboard.stats.avgRisk}
               </span>
               <span>
-                <Flame size={17} /> {dashboard.stats.critical} critical
+                <Flame size={17} /> {dashboard.stats.critical} {t.critical}
               </span>
               <span>
                 <Globe2 size={17} /> {formatReach(dashboard.stats.monitoredReach)}
@@ -526,19 +853,19 @@ function App() {
       <section className="metrics-strip">
         <div>
           <strong>{dashboard.stats.totalSignals}</strong>
-          <span>signals monitored</span>
+          <span>{t.metrics[0]}</span>
         </div>
         <div>
           <strong>{dashboard.stats.activeSituations}</strong>
-          <span>active situations</span>
+          <span>{t.metrics[1]}</span>
         </div>
         <div>
           <strong>{dashboard.stats.high}</strong>
-          <span>high risk</span>
+          <span>{t.metrics[2]}</span>
         </div>
         <div>
           <strong>{formatReach(dashboard.stats.monitoredReach)}</strong>
-          <span>public reach</span>
+          <span>{t.metrics[3]}</span>
         </div>
       </section>
 
@@ -546,7 +873,7 @@ function App() {
         <section className="ops-deck">
           <div className="ops-card panel">
             <span className="kicker">
-              <Play size={16} /> Scenario simulator
+              <Play size={16} /> {t.scenario}
             </span>
             <div className="scenario-row">
               {scenarioOptions.map((scenario) => (
@@ -556,14 +883,14 @@ function App() {
                   onClick={() => runScenario(scenario.id)}
                   disabled={busyAction === scenario.id}
                 >
-                  {busyAction === scenario.id ? 'Running...' : scenario.label}
+                  {busyAction === scenario.id ? t.running : scenario.label}
                 </button>
               ))}
             </div>
           </div>
           <div className="ops-card panel">
             <span className="kicker">
-              <ListChecks size={16} /> Playbook progress
+              <ListChecks size={16} /> {t.playbook}
             </span>
             <strong>{activeCompletion}% complete</strong>
             <div className="mini-progress" aria-hidden="true">
@@ -572,11 +899,11 @@ function App() {
           </div>
           <div className="ops-card panel">
             <span className="kicker">
-              <Download size={16} /> Crisis report
+              <Download size={16} /> {t.report}
             </span>
             <div className="report-row">
               <button type="button" className="secondary-action report-action" onClick={exportReport}>
-                {busyAction === 'export' ? 'Preparing...' : 'JSON'} <ArrowUpRight size={17} />
+                {busyAction === 'export' ? t.preparing : 'JSON'} <ArrowUpRight size={17} />
               </button>
               <a className="primary-action report-action" href={pdfReportUrl(activeSituation.id)}>
                 PDF <Download size={17} />
@@ -591,12 +918,12 @@ function App() {
           <div className="war-head">
             <div>
               <span className="kicker">
-                <Siren size={16} /> Crisis war room
+                <Siren size={16} /> {t.warRoom}
               </span>
               <h2>{dashboard.warRoom.operatingMode}</h2>
             </div>
             <div className="war-score">
-              <span>readiness</span>
+              <span>{t.readiness}</span>
               <strong>{dashboard.warRoom.averageReadiness}%</strong>
             </div>
           </div>
@@ -605,17 +932,17 @@ function App() {
             <span>
               <UsersRound size={16} />
               <strong>{dashboard.warRoom.teamReadiness}%</strong>
-              team ready
+              {t.teamReady}
             </span>
             <span>
               <Send size={16} />
               <strong>{dashboard.warRoom.unresolvedApprovals}</strong>
-              approvals open
+              {t.approvalsOpen}
             </span>
             <span>
               <RadioTower size={16} />
               <strong>{dashboard.warRoom.freshEvents}</strong>
-              fresh events
+              {t.freshEvents}
             </span>
           </div>
 
@@ -625,7 +952,7 @@ function App() {
                 <Gauge />
                 <div>
                   <strong>{activeWarLane?.title ?? 'Top operating lane'}</strong>
-                  <small>{activeWarLane ? `${activeWarLane.minutesOpen} minutes open - ${activeWarLane.communicationStatus}` : 'Select an incident to inspect response readiness.'}</small>
+                  <small>{activeWarLane ? `${activeWarLane.minutesOpen} ${t.minutesOpen} - ${activeWarLane.communicationStatus}` : t.laneHint}</small>
                 </div>
               </div>
               {activeWarLane && (
@@ -641,12 +968,12 @@ function App() {
                   </div>
                   <div className="war-bars">
                     <div>
-                      <span>Evidence health</span>
+                      <span>{t.evidenceHealth}</span>
                       <b>{activeWarLane.evidenceHealth}%</b>
                       <i><em style={{ width: `${activeWarLane.evidenceHealth}%` }} /></i>
                     </div>
                     <div>
-                      <span>SLA pressure</span>
+                      <span>{t.slaPressure}</span>
                       <b>{activeWarLane.slaPressure}%</b>
                       <i><em style={{ width: `${activeWarLane.slaPressure}%` }} /></i>
                     </div>
@@ -659,8 +986,8 @@ function App() {
               <div className="panel-title">
                 <ClipboardList />
                 <div>
-                  <strong>Next operational move</strong>
-                  <small>Keputusan ringkas dari readiness, evidence, SLA, dan approval.</small>
+                  <strong>{t.nextMove}</strong>
+                  <small>{t.nextMoveHint}</small>
                 </div>
               </div>
               <p>{activeWarLane?.nextMove ?? dashboard.warRoom.lanes[0]?.nextMove}</p>
@@ -697,8 +1024,8 @@ function App() {
             <div className="panel-title">
               <Send />
               <div>
-                <strong>Statement approval workflow</strong>
-                <small>Draft, review, approved, published, rejected.</small>
+                <strong>{t.approvalTitle}</strong>
+                <small>{t.approvalHint}</small>
               </div>
             </div>
             <div className="approval-current">
@@ -713,12 +1040,12 @@ function App() {
                 onClick={requestApproval}
                 disabled={currentUser?.role === 'viewer' || busyAction === 'approval'}
               >
-                {busyAction === 'approval' ? 'Sending...' : 'Send review'}
+                {busyAction === 'approval' ? t.preparing : t.sendReview}
               </button>
             </div>
             <div className="approval-list">
               {activeApprovals.length === 0 ? (
-                <span className="approval-empty">Belum ada approval untuk incident ini.</span>
+                <span className="approval-empty">{t.noApproval}</span>
               ) : (
                 activeApprovals.map((approval) => (
                   <div className={`approval-item ${approval.status}`} key={approval.id}>
@@ -760,8 +1087,8 @@ function App() {
             <div className="panel-title">
               <RadioTower />
               <div>
-                <strong>Live command feed</strong>
-                <small>Polling 5 detik dari Prisma live events.</small>
+                <strong>{t.liveFeed}</strong>
+                <small>{t.liveFeedHint}</small>
               </div>
             </div>
             <div className="live-list">
@@ -815,9 +1142,9 @@ function App() {
       <section className="monitor" id="monitor">
         <div className="section-title">
           <span className="kicker">
-            <Brain size={16} /> Real-time monitoring
+            <Brain size={16} /> {t.monitoring}
           </span>
-          <h2>Signal intake, risk engine, dan peta krisis dalam satu sistem.</h2>
+          <h2>{t.monitoringTitle}</h2>
         </div>
 
         <div className="monitor-grid">
@@ -825,12 +1152,12 @@ function App() {
             <div className="panel-title">
               <BellRing />
               <div>
-                <strong>Signal intake</strong>
-                <small>Berita, RSS, social media, weather API, dan laporan warga.</small>
+                <strong>{t.signalIntake}</strong>
+                <small>{t.signalIntakeHint}</small>
               </div>
             </div>
             <label>
-              Judul sinyal
+              {t.title}
               <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
             </label>
             <div className="form-row">
@@ -845,7 +1172,7 @@ function App() {
                 </select>
               </label>
               <label>
-                Category
+                {t.category}
                 <select
                   value={form.category}
                   onChange={(event) => setForm({ ...form, category: event.target.value as Category })}
@@ -860,7 +1187,7 @@ function App() {
             </div>
             <div className="form-row">
               <label>
-                Location
+                {t.location}
                 <input value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
               </label>
               <label>
@@ -919,7 +1246,7 @@ function App() {
               <textarea value={form.summary} onChange={(event) => setForm({ ...form, summary: event.target.value })} />
             </label>
             <button type="button" className="primary-action submit" onClick={submitSignal}>
-              Ingest signal <ChevronRight size={18} />
+              {t.addSignal} <ChevronRight size={18} />
             </button>
           </div>
 
@@ -929,7 +1256,7 @@ function App() {
                 <Search size={17} />
                 <input
                   value={query}
-                  placeholder="Search issue, lokasi, source..."
+                  placeholder={t.search}
                   onChange={(event) => setQuery(event.target.value)}
                 />
               </label>
@@ -942,12 +1269,12 @@ function App() {
                     className={levelFilter === level ? 'active' : ''}
                     onClick={() => setLevelFilter(level)}
                   >
-                    {level === 'all' ? 'All' : levelLabels[level]}
+                    {t.filters[level]}
                   </button>
                 ))}
               </div>
               <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value as 'all' | Category)}>
-                <option value="all">All categories</option>
+                <option value="all">{t.filters.all} categories</option>
                 {Object.entries(categoryLabels).map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
@@ -997,7 +1324,7 @@ function App() {
             <div className="panel-title">
               <Activity />
               <div>
-                <strong>Risk score breakdown</strong>
+                <strong>{t.riskBreakdown}</strong>
                 <small>Kontribusi severity, velocity, credibility, reach, dan sentiment.</small>
               </div>
             </div>
@@ -1021,7 +1348,7 @@ function App() {
             <div className="panel-title">
               <MapPin />
               <div>
-                <strong>Crisis map</strong>
+                <strong>{t.crisisMap}</strong>
                 <small>Lokasi sinyal aktif dan radius eskalasi.</small>
               </div>
             </div>
@@ -1051,7 +1378,7 @@ function App() {
             <div className="panel-title">
               <ClipboardList />
               <div>
-                <strong>What should we do next?</strong>
+                <strong>{t.whatNext}</strong>
                 <small>{activeSituation.summary}</small>
               </div>
             </div>
@@ -1086,7 +1413,7 @@ function App() {
             <div className="panel-title">
               <Layers3 />
               <div>
-                <strong>Source verification</strong>
+                <strong>{t.sourceVerification}</strong>
                 <small>Evidence status dari sinyal yang membentuk incident.</small>
               </div>
             </div>
@@ -1105,7 +1432,7 @@ function App() {
             <div className="panel-title">
               <Megaphone />
               <div>
-                <strong>Auto-generated statement</strong>
+                <strong>{t.statement}</strong>
                 <small>Holding statement untuk brand, komunitas, atau pemerintah daerah.</small>
               </div>
             </div>
@@ -1116,7 +1443,7 @@ function App() {
             <div className="panel-title">
               <History />
               <div>
-                <strong>Auto timeline</strong>
+                <strong>{t.timeline}</strong>
                 <small>Urutan kejadian dari sinyal multi-source.</small>
               </div>
             </div>
@@ -1133,7 +1460,7 @@ function App() {
             <div className="panel-title">
               <UsersRound />
               <div>
-                <strong>Collaboration room</strong>
+                <strong>{t.collaboration}</strong>
                 <small>PR team, creator, NGO, relawan, dan pemerintah daerah.</small>
               </div>
             </div>
@@ -1148,7 +1475,7 @@ function App() {
             <div className="panel-title">
               <FileText />
               <div>
-                <strong>Audit trail</strong>
+                <strong>{t.audit}</strong>
                 <small>Kenapa AI memberi rekomendasi itu.</small>
               </div>
             </div>
@@ -1210,11 +1537,11 @@ function App() {
               </span>
             </div>
             <div className="drawer-section">
-              <strong>Generated statement</strong>
+              <strong>{t.statement}</strong>
               <blockquote>{activeSituation.statement}</blockquote>
             </div>
             <div className="drawer-section">
-              <strong>Evidence</strong>
+              <strong>{t.sourceVerification}</strong>
               {activeSituation.evidence.map((item) => (
                 <span className="drawer-line" key={item.id}>
                   <BadgeCheck size={15} /> {item.title} - {item.verification.replace('_', ' ')}
@@ -1222,7 +1549,7 @@ function App() {
               ))}
             </div>
             <div className="drawer-section">
-              <strong>Audit trail</strong>
+              <strong>{t.audit}</strong>
               {activeSituation.audit.length > 0 ? (
                 activeSituation.audit.map((item) => (
                   <span className="drawer-line" key={item.id}>
@@ -1245,7 +1572,7 @@ function App() {
           <div>
             <span className="footer-kicker">Crisis command layer</span>
             <strong>CrisisSignal AI</strong>
-            <p>Monitoring real-time, scoring risiko, rekomendasi respons, dan audit trail dalam satu ruang operasi.</p>
+            <p>{t.heroDescription}</p>
           </div>
         </div>
 
@@ -1279,8 +1606,8 @@ function App() {
 
           <div className="footer-links">
             <a href="#top">Overview</a>
-            <a href="#monitor">Monitor</a>
-            <a href="#response">Response</a>
+            <a href="#monitor">{t.navMonitor}</a>
+            <a href="#response">{t.navResponse}</a>
           </div>
         </div>
       </footer>
