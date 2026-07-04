@@ -135,6 +135,7 @@ export function dashboardSummary(db) {
     users: db.users || [],
     approvals: db.approvals || [],
     liveEvents: db.liveEvents || [],
+    warRoom: buildWarRoom(situations, db.approvals || [], db.liveEvents || [], db.teams || []),
     teams: db.teams,
     latestAudit: db.auditTrail.slice(0, 8),
   }
@@ -347,6 +348,77 @@ function buildAlerts(situations) {
           ? `${situation.title} requires immediate response room activation.`
           : `${situation.title} crossed the high-risk threshold or public reach guardrail.`,
     }))
+}
+
+function buildWarRoom(situations, approvals = [], liveEvents = [], teams = []) {
+  const readyTeams = teams.filter((team) => /ready|online|active|standby/i.test(team.status)).length
+  const teamReadiness = Math.round((readyTeams / Math.max(1, teams.length)) * 100)
+  const unresolvedApprovals = approvals.filter((item) => !['published', 'approved'].includes(item.status)).length
+  const freshEvents = liveEvents.filter((event) => Date.now() - new Date(event.createdAt).getTime() <= 30 * 60 * 1000).length
+
+  const lanes = situations.slice(0, 5).map((situation) => {
+    const published = approvals.some((item) => item.situationId === situation.id && item.status === 'published')
+    const approved = approvals.some((item) => item.situationId === situation.id && item.status === 'approved')
+    const confirmedEvidence = situation.evidence.filter((item) => item.verification === 'confirmed').length
+    const evidenceHealth = Math.round((confirmedEvidence / Math.max(1, situation.evidence.length)) * 100)
+    const velocity = situation.scoreBreakdown.velocity
+    const firstSignal = situation.timeline[0]?.time ?? new Date().toISOString()
+    const minutesOpen = Math.max(1, Math.round((Date.now() - new Date(firstSignal).getTime()) / 60000))
+    const responseSla = situation.level === 'critical' ? 15 : situation.level === 'high' ? 30 : 60
+    const slaPressure = Math.min(100, Math.round((minutesOpen / responseSla) * 100))
+    const readiness = Math.max(
+      18,
+      Math.min(
+        99,
+        Math.round(
+          teamReadiness * 0.26 +
+            evidenceHealth * 0.25 +
+            (published ? 100 : approved ? 82 : 45) * 0.22 +
+            (100 - Math.min(100, slaPressure)) * 0.16 +
+            Math.min(100, freshEvents * 20) * 0.11,
+        ),
+      ),
+    )
+
+    const blockers = [
+      evidenceHealth < 60 ? 'Evidence perlu diverifikasi ulang' : null,
+      !published ? (approved ? 'Statement belum dipublikasi' : 'Approval komunikasi belum selesai') : null,
+      slaPressure >= 85 ? 'SLA respon mulai tertekan' : null,
+      velocity >= 18 ? 'Kecepatan eskalasi tinggi' : null,
+    ].filter(Boolean)
+
+    return {
+      situationId: situation.id,
+      title: situation.title,
+      level: situation.level,
+      readiness,
+      evidenceHealth,
+      slaPressure,
+      minutesOpen,
+      communicationStatus: published ? 'published' : approved ? 'approved' : 'review needed',
+      nextMove:
+        readiness >= 80
+          ? 'Publish update berikutnya dan lanjutkan monitoring 15 menit.'
+          : evidenceHealth < 60
+            ? 'Prioritaskan verifikasi tiga bukti terkuat sebelum eskalasi publik.'
+            : !published
+              ? 'Selesaikan approval statement dan siapkan kanal publik resmi.'
+              : 'Tambahkan field report dan sinkronkan playbook lintas tim.',
+      blockers: blockers.length ? blockers : ['Tidak ada blocker besar saat ini'],
+    }
+  })
+
+  const averageReadiness = Math.round(lanes.reduce((sum, lane) => sum + lane.readiness, 0) / Math.max(1, lanes.length))
+  const highestPressure = lanes.reduce((top, lane) => Math.max(top, lane.slaPressure), 0)
+
+  return {
+    operatingMode: highestPressure >= 90 ? 'Escalated command' : averageReadiness >= 78 ? 'Coordinated response' : 'Triage acceleration',
+    averageReadiness,
+    teamReadiness,
+    unresolvedApprovals,
+    freshEvents,
+    lanes,
+  }
 }
 
 function generateStatement(category, score, location) {

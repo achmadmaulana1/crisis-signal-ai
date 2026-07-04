@@ -270,6 +270,10 @@ function App() {
     () => (dashboard?.approvals ?? []).filter((approval) => approval.situationId === activeSituation?.id),
     [activeSituation?.id, dashboard?.approvals],
   )
+  const activeWarLane = useMemo(
+    () => dashboard?.warRoom?.lanes.find((lane) => lane.situationId === activeSituation?.id),
+    [activeSituation?.id, dashboard?.warRoom?.lanes],
+  )
 
   async function submitSignal() {
     const result = await ingestSignal(form as Partial<Signal>)
@@ -577,6 +581,111 @@ function App() {
               <a className="primary-action report-action" href={pdfReportUrl(activeSituation.id)}>
                 PDF <Download size={17} />
               </a>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {dashboard.warRoom && (
+        <section className="war-room panel" id="war-room">
+          <div className="war-head">
+            <div>
+              <span className="kicker">
+                <Siren size={16} /> Crisis war room
+              </span>
+              <h2>{dashboard.warRoom.operatingMode}</h2>
+            </div>
+            <div className="war-score">
+              <span>readiness</span>
+              <strong>{dashboard.warRoom.averageReadiness}%</strong>
+            </div>
+          </div>
+
+          <div className="war-metrics">
+            <span>
+              <UsersRound size={16} />
+              <strong>{dashboard.warRoom.teamReadiness}%</strong>
+              team ready
+            </span>
+            <span>
+              <Send size={16} />
+              <strong>{dashboard.warRoom.unresolvedApprovals}</strong>
+              approvals open
+            </span>
+            <span>
+              <RadioTower size={16} />
+              <strong>{dashboard.warRoom.freshEvents}</strong>
+              fresh events
+            </span>
+          </div>
+
+          <div className="war-layout">
+            <div className="war-priority">
+              <div className="panel-title">
+                <Gauge />
+                <div>
+                  <strong>{activeWarLane?.title ?? 'Top operating lane'}</strong>
+                  <small>{activeWarLane ? `${activeWarLane.minutesOpen} minutes open - ${activeWarLane.communicationStatus}` : 'Select an incident to inspect response readiness.'}</small>
+                </div>
+              </div>
+              {activeWarLane && (
+                <>
+                  <div className="readiness-orbit" aria-label={`Readiness ${activeWarLane.readiness}%`}>
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 9, repeat: Infinity, ease: 'linear' }}
+                      aria-hidden="true"
+                    />
+                    <strong>{activeWarLane.readiness}</strong>
+                    <small>{levelLabels[activeWarLane.level]}</small>
+                  </div>
+                  <div className="war-bars">
+                    <div>
+                      <span>Evidence health</span>
+                      <b>{activeWarLane.evidenceHealth}%</b>
+                      <i><em style={{ width: `${activeWarLane.evidenceHealth}%` }} /></i>
+                    </div>
+                    <div>
+                      <span>SLA pressure</span>
+                      <b>{activeWarLane.slaPressure}%</b>
+                      <i><em style={{ width: `${activeWarLane.slaPressure}%` }} /></i>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="war-next">
+              <div className="panel-title">
+                <ClipboardList />
+                <div>
+                  <strong>Next operational move</strong>
+                  <small>Keputusan ringkas dari readiness, evidence, SLA, dan approval.</small>
+                </div>
+              </div>
+              <p>{activeWarLane?.nextMove ?? dashboard.warRoom.lanes[0]?.nextMove}</p>
+              <div className="blocker-list">
+                {(activeWarLane?.blockers ?? dashboard.warRoom.lanes[0]?.blockers ?? []).map((blocker) => (
+                  <span key={blocker}>
+                    <AlertTriangle size={15} /> {blocker}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="war-lanes">
+              {dashboard.warRoom.lanes.map((lane) => (
+                <button
+                  type="button"
+                  className={`war-lane ${lane.level} ${lane.situationId === activeSituation?.id ? 'active' : ''}`}
+                  key={lane.situationId}
+                  onClick={() => selectSituation(lane.situationId)}
+                >
+                  <span>{lane.readiness}%</span>
+                  <strong>{lane.title}</strong>
+                  <small>{lane.communicationStatus} - SLA {lane.slaPressure}%</small>
+                </button>
+              ))}
             </div>
           </div>
         </section>

@@ -121,6 +121,26 @@ export type LiveEvent = {
   createdAt: string
 }
 
+export type WarRoom = {
+  operatingMode: string
+  averageReadiness: number
+  teamReadiness: number
+  unresolvedApprovals: number
+  freshEvents: number
+  lanes: Array<{
+    situationId: Category
+    title: string
+    level: RiskLevel
+    readiness: number
+    evidenceHealth: number
+    slaPressure: number
+    minutesOpen: number
+    communicationStatus: string
+    nextMove: string
+    blockers: string[]
+  }>
+}
+
 export type Dashboard = {
   repoName: string
   description: string
@@ -148,6 +168,7 @@ export type Dashboard = {
   users: User[]
   approvals: ApprovalRequest[]
   liveEvents: LiveEvent[]
+  warRoom: WarRoom
   teams: Team[]
   latestAudit: Situation['audit']
 }
