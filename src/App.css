@@ -322,6 +322,85 @@ button:disabled {
   color: #111317;
 }
 
+.command-palette-backdrop {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding: 92px 18px 18px;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.command-palette {
+  width: min(720px, 100%);
+  padding: 12px;
+}
+
+.command-palette-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 2px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.command-palette-head input {
+  min-height: 42px;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+  outline: none;
+}
+
+.command-palette-head span {
+  padding: 6px 8px;
+  border: 2px solid var(--line);
+  color: #111317;
+  background: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 1000;
+}
+
+.command-palette-list {
+  display: grid;
+  gap: 8px;
+  max-height: min(58vh, 520px);
+  overflow: auto;
+  margin-top: 10px;
+}
+
+.command-palette-list button {
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+  border: 2px solid var(--line);
+  color: var(--ink);
+  background: var(--panel-strong);
+  box-shadow: 3px 3px 0 var(--shadow);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    background 160ms ease;
+}
+
+.command-palette-list button:hover {
+  transform: translate(-2px, -2px);
+  background: color-mix(in srgb, var(--cyan) 15%, var(--panel-strong));
+}
+
+.command-palette-list small {
+  color: var(--muted);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .command-mode .hero {
   min-height: auto;
   padding-bottom: 24px;
@@ -567,7 +646,7 @@ button:disabled {
 
 .ops-deck {
   display: grid;
-  grid-template-columns: 1fr 0.8fr 0.7fr;
+  grid-template-columns: 1fr 0.8fr 0.8fr 0.7fr;
   gap: 12px;
   padding: 10px 0 34px;
 }
@@ -860,6 +939,36 @@ button:disabled {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.sla-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.sla-card::after {
+  content: '';
+  position: absolute;
+  inset: auto 14px 14px auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--line);
+  background: var(--green);
+  box-shadow: 3px 3px 0 var(--shadow);
+}
+
+.sla-card.watch::after {
+  background: var(--amber);
+}
+
+.sla-card.urgent::after,
+.sla-card.breached::after {
+  background: var(--red);
+}
+
+.sla-card small {
+  color: var(--muted);
+  font-weight: 900;
 }
 
 .operating-grid {

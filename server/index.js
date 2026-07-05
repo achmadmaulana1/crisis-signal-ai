@@ -15,10 +15,16 @@ import {
 
 const app = express()
 const port = Number(process.env.PORT || 4177)
+const requestWindow = new Map()
+const categories = new Set(['weather_extreme', 'scam', 'event_safety', 'hoax', 'supply_disruption', 'brand_issue', 'social_conflict'])
+const sources = new Set(['news', 'rss', 'x', 'tiktok', 'reddit', 'youtube', 'weather', 'citizen_report'])
+const approvalStatuses = new Set(['draft', 'review', 'approved', 'published', 'rejected'])
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '180kb' }))
 app.use(morgan('dev'))
+app.use(securityHeaders)
+app.use(rateLimit)
 
 app.get('/api/health', (_request, response) => {
   response.json({ ok: true, service: 'crisis-signal-ai', time: new Date().toISOString() })
@@ -43,6 +49,12 @@ app.get('/api/users', async (_request, response, next) => {
 
 app.post('/api/auth/login', async (request, response, next) => {
   try {
+    const validation = validateLogin(request.body)
+    if (validation) {
+      response.status(400).json({ error: validation })
+      return
+    }
+
     const user =
       (await prisma.user.findFirst({
         where: request.body.email ? { email: request.body.email } : { role: request.body.role || 'admin' },
@@ -156,6 +168,12 @@ app.get('/api/approvals', async (_request, response, next) => {
 
 app.post('/api/approvals', async (request, response, next) => {
   try {
+    const validation = validateApproval(request.body)
+    if (validation) {
+      response.status(400).json({ error: validation })
+      return
+    }
+
     const db = await readDb()
     const report = buildReport(db, request.body.situationId)
     if (!report) {
@@ -183,6 +201,11 @@ app.post('/api/approvals', async (request, response, next) => {
 
 app.patch('/api/approvals/:id', async (request, response, next) => {
   try {
+    if (!approvalStatuses.has(request.body.status)) {
+      response.status(400).json({ error: 'Invalid approval status' })
+      return
+    }
+
     const approval = await prisma.approvalRequest.update({
       where: { id: request.params.id },
       data: {
@@ -217,6 +240,12 @@ app.get('/api/playbooks', async (_request, response, next) => {
 
 app.post('/api/ingest', async (request, response, next) => {
   try {
+    const validation = validateSignal(request.body)
+    if (validation) {
+      response.status(400).json({ error: validation })
+      return
+    }
+
     const db = await readDb()
     const signal = ingestSignal(db, request.body)
     await writeDb(db)
@@ -229,6 +258,11 @@ app.post('/api/ingest', async (request, response, next) => {
 
 app.post('/api/simulate', async (request, response, next) => {
   try {
+    if (request.body.scenario && !['flood', 'scam', 'crowd'].includes(request.body.scenario)) {
+      response.status(400).json({ error: 'Invalid scenario' })
+      return
+    }
+
     const db = await readDb()
     const signal = ingestSignal(db, scenarioSignal(request.body))
     await writeDb(db)
@@ -270,4 +304,68 @@ async function addLiveEvent(type, title, message, situationId) {
       situationId,
     },
   })
+}
+
+function securityHeaders(_request, response, next) {
+  response.setHeader('X-Content-Type-Options', 'nosniff')
+  response.setHeader('X-Frame-Options', 'SAMEORIGIN')
+  response.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  response.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  next()
+}
+
+function rateLimit(request, response, next) {
+  const key = request.ip || request.socket.remoteAddress || 'local'
+  const now = Date.now()
+  const windowMs = 60_000
+  const limit = 160
+  const current = requestWindow.get(key) || { count: 0, resetAt: now + windowMs }
+
+  if (now > current.resetAt) {
+    current.count = 0
+    current.resetAt = now + windowMs
+  }
+
+  current.count += 1
+  requestWindow.set(key, current)
+
+  if (current.count > limit) {
+    response.status(429).json({ error: 'Too many requests' })
+    return
+  }
+
+  next()
+}
+
+function validateLogin(body = {}) {
+  if (body.role && !['admin', 'analyst', 'comms', 'field_verifier', 'viewer'].includes(body.role)) return 'Invalid role'
+  if (body.email && typeof body.email !== 'string') return 'Invalid email'
+  return ''
+}
+
+function validateApproval(body = {}) {
+  if (!body.situationId || !categories.has(body.situationId)) return 'Invalid situationId'
+  if (body.statement && String(body.statement).length > 1400) return 'Statement is too long'
+  if (body.requestedBy && typeof body.requestedBy !== 'string') return 'Invalid requester'
+  return ''
+}
+
+function validateSignal(body = {}) {
+  if (body.source && !sources.has(body.source)) return 'Invalid source'
+  if (body.category && !categories.has(body.category)) return 'Invalid category'
+  if (body.title && String(body.title).length > 180) return 'Title is too long'
+  if (body.summary && String(body.summary).length > 1200) return 'Summary is too long'
+  if (body.location && String(body.location).length > 120) return 'Location is too long'
+
+  for (const field of ['severity', 'velocity', 'credibility']) {
+    if (body[field] !== undefined && !isRange(body[field], 0, 100)) return `${field} must be between 0 and 100`
+  }
+  if (body.sentiment !== undefined && !isRange(body.sentiment, -100, 100)) return 'sentiment must be between -100 and 100'
+  if (body.reach !== undefined && (!Number.isFinite(Number(body.reach)) || Number(body.reach) < 0)) return 'reach must be positive'
+  return ''
+}
+
+function isRange(value, min, max) {
+  const number = Number(value)
+  return Number.isFinite(number) && number >= min && number <= max
 }

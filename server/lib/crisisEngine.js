@@ -54,6 +54,8 @@ export function clusterSituations(signals, auditTrail = [], playbookTasks = []) 
         scoreBreakdown: aggregateBreakdown(items),
         scoreHistory: buildScoreHistory(items),
         level: levelFromScore(score),
+        lifecycle: lifecycleFor(score, items, auditTrail.filter((entry) => entry.situationId === category)),
+        sla: buildSla(score, items),
         location: peak.location,
         lat: peak.lat,
         lng: peak.lng,
@@ -418,6 +420,49 @@ function buildWarRoom(situations, approvals = [], liveEvents = [], teams = []) {
     unresolvedApprovals,
     freshEvents,
     lanes,
+  }
+}
+
+function lifecycleFor(score, items, audit = []) {
+  const confirmed = items.filter((item) => verificationStatus(item) === 'confirmed').length
+  const hasAudit = audit.length > 0
+  const ageMinutes = Math.max(
+    1,
+    Math.round((Date.now() - Math.min(...items.map((item) => new Date(item.timestamp).getTime()))) / 60000),
+  )
+
+  if (score < 42) return 'monitoring'
+  if (score >= 82 && confirmed >= 2 && hasAudit) return 'responding'
+  if (confirmed >= Math.max(1, Math.ceil(items.length * 0.45))) return 'verified'
+  if (ageMinutes <= 45 || score >= 64) return 'triaging'
+  return 'new'
+}
+
+function buildSla(score, items) {
+  const level = levelFromScore(score)
+  const minutesByLevel = {
+    critical: 15,
+    high: 30,
+    medium: 120,
+    low: 360,
+  }
+  const targetMinutes = minutesByLevel[level]
+  const firstSignal = Math.min(...items.map((item) => new Date(item.timestamp).getTime()))
+  const openedAt = new Date(firstSignal).toISOString()
+  const deadline = new Date(firstSignal + targetMinutes * 60000)
+  const now = Date.now()
+  const remainingMinutes = Math.round((deadline.getTime() - now) / 60000)
+  const elapsedMinutes = Math.max(0, Math.round((now - firstSignal) / 60000))
+  const pressure = Math.min(100, Math.max(0, Math.round((elapsedMinutes / targetMinutes) * 100)))
+
+  return {
+    openedAt,
+    deadline: deadline.toISOString(),
+    targetMinutes,
+    elapsedMinutes,
+    remainingMinutes,
+    pressure,
+    state: remainingMinutes < 0 ? 'breached' : pressure >= 80 ? 'urgent' : pressure >= 55 ? 'watch' : 'healthy',
   }
 }
 

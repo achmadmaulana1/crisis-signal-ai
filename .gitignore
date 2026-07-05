@@ -14,11 +14,20 @@ dist-ssr
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.crt
+secrets/
+private/
 prisma/dev.db
 prisma/dev.db-*
+*.db
+*.db-journal
 *.sqlite
 *.sqlite3
 coverage
+reports/private
+server/data/private
 
 # Editor directories and files
 .vscode/*

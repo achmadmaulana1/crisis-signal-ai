@@ -10,6 +10,7 @@ export type Category =
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical'
 export type VerificationStatus = 'confirmed' | 'needs_review' | 'unverified'
 export type UserRole = 'admin' | 'analyst' | 'comms' | 'field_verifier' | 'viewer'
+export type IncidentLifecycle = 'new' | 'triaging' | 'verified' | 'responding' | 'monitoring' | 'resolved'
 
 export type Signal = {
   id: string
@@ -40,6 +41,16 @@ export type Situation = {
     score: number
   }>
   level: RiskLevel
+  lifecycle: IncidentLifecycle
+  sla: {
+    openedAt: string
+    deadline: string
+    targetMinutes: number
+    elapsedMinutes: number
+    remainingMinutes: number
+    pressure: number
+    state: 'healthy' | 'watch' | 'urgent' | 'breached'
+  }
   location: string
   lat: number
   lng: number

@@ -449,6 +449,8 @@ function App() {
   const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all')
   const [detailOpen, setDetailOpen] = useState(false)
   const [commandMode, setCommandMode] = useState(false)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [commandQuery, setCommandQuery] = useState('')
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
   const [busyAction, setBusyAction] = useState('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -553,6 +555,22 @@ function App() {
     return () => window.clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setCommandPaletteOpen((value) => !value)
+      }
+
+      if (event.key === 'Escape') {
+        setCommandPaletteOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleShortcut)
+    return () => window.removeEventListener('keydown', handleShortcut)
+  }, [])
+
   const activeSituation = useMemo<Situation | undefined>(
     () => dashboard?.situations.find((item) => item.id === activeId) ?? dashboard?.situations[0],
     [activeId, dashboard],
@@ -586,6 +604,73 @@ function App() {
     () => dashboard?.warRoom?.lanes.find((lane) => lane.situationId === activeSituation?.id),
     [activeSituation?.id, dashboard?.warRoom?.lanes],
   )
+  const commands = [
+      {
+        id: 'open-monitor',
+        label: 'Open signal intake',
+        meta: 'Monitoring',
+        action: () => {
+          document.querySelector('#monitor')?.scrollIntoView({ behavior: 'smooth' })
+        },
+      },
+      {
+        id: 'open-response',
+        label: 'Open response workspace',
+        meta: 'Response',
+        action: () => {
+          document.querySelector('#response')?.scrollIntoView({ behavior: 'smooth' })
+        },
+      },
+      {
+        id: 'toggle-command',
+        label: commandMode ? 'Exit compact command mode' : 'Enter compact command mode',
+        meta: 'View',
+        action: () => setCommandMode((value) => !value),
+      },
+      {
+        id: 'scenario-scam',
+        label: 'Run scam spike scenario',
+        meta: 'Simulator',
+        action: () => runScenario('scam'),
+      },
+      {
+        id: 'scenario-flood',
+        label: 'Run flood surge scenario',
+        meta: 'Simulator',
+        action: () => runScenario('flood'),
+      },
+      {
+        id: 'scenario-crowd',
+        label: 'Run crowd risk scenario',
+        meta: 'Simulator',
+        action: () => runScenario('crowd'),
+      },
+      {
+        id: 'export-report',
+        label: 'Export active incident JSON',
+        meta: 'Report',
+        action: exportReport,
+      },
+      {
+        id: 'reset-demo',
+        label: 'Reset demo data',
+        meta: 'System',
+        action: restoreDemo,
+      },
+      ...(dashboard?.situations ?? []).map((situation) => ({
+        id: `incident-${situation.id}`,
+        label: situation.title,
+        meta: `${situation.lifecycle} - score ${situation.score}`,
+        action: () => selectSituation(situation.id),
+      })),
+    ]
+  const filteredCommands = (() => {
+    const needle = commandQuery.trim().toLowerCase()
+    if (!needle) return commands.slice(0, 10)
+    return commands
+      .filter((command) => [command.label, command.meta].join(' ').toLowerCase().includes(needle))
+      .slice(0, 12)
+  })()
 
   async function submitSignal() {
     const result = await ingestSignal(form as Partial<Signal>)
@@ -712,6 +797,52 @@ function App() {
         }}
         aria-hidden="true"
       />
+      <AnimatePresence>
+        {commandPaletteOpen && (
+          <motion.div
+            className="command-palette-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={() => setCommandPaletteOpen(false)}
+          >
+            <motion.div
+              className="command-palette panel"
+              initial={{ opacity: 0, y: -16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -12, scale: 0.98 }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="command-palette-head">
+                <Search size={18} />
+                <input
+                  autoFocus
+                  value={commandQuery}
+                  placeholder="Search action, scenario, incident..."
+                  onChange={(event) => setCommandQuery(event.target.value)}
+                />
+                <span>Ctrl K</span>
+              </div>
+              <div className="command-palette-list">
+                {filteredCommands.map((command) => (
+                  <button
+                    type="button"
+                    key={command.id}
+                    onClick={() => {
+                      command.action()
+                      setCommandPaletteOpen(false)
+                      setCommandQuery('')
+                    }}
+                  >
+                    <strong>{command.label}</strong>
+                    <small>{command.meta}</small>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <section className="hero" id="top">
         <nav className="nav">
           <a className="brand" href="#top" aria-label="CrisisSignal AI">
@@ -754,10 +885,10 @@ function App() {
             <button
               type="button"
               className="nav-command"
-              onClick={() => setCommandMode((value) => !value)}
+              onClick={() => setCommandPaletteOpen(true)}
               title="Command center"
             >
-              {commandMode ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
               {t.command}
             </button>
             <a href="#monitor">{t.navMonitor}</a>
@@ -895,6 +1026,18 @@ function App() {
             <strong>{activeCompletion}% complete</strong>
             <div className="mini-progress" aria-hidden="true">
               <span style={{ width: `${activeCompletion}%` }} />
+            </div>
+          </div>
+          <div className={`ops-card panel sla-card ${activeSituation.sla.state}`}>
+            <span className="kicker">
+              <Activity size={16} /> Incident lifecycle
+            </span>
+            <strong>{activeSituation.lifecycle}</strong>
+            <small>
+              SLA {activeSituation.sla.remainingMinutes >= 0 ? `${activeSituation.sla.remainingMinutes}m left` : `${Math.abs(activeSituation.sla.remainingMinutes)}m late`}
+            </small>
+            <div className="mini-progress" aria-hidden="true">
+              <span style={{ width: `${activeSituation.sla.pressure}%` }} />
             </div>
           </div>
           <div className="ops-card panel">
@@ -1296,12 +1439,12 @@ function App() {
                     exit={{ opacity: 0, scale: 0.97 }}
                   >
                     <span className={`risk-dot ${situation.level}`} />
-                    <span>
-                      <strong>{situation.title}</strong>
-                      <small>
-                        {situation.signalCount} signals - {formatReach(situation.reach)} reach
-                      </small>
-                    </span>
+                  <span>
+                    <strong>{situation.title}</strong>
+                    <small>
+                        {situation.lifecycle} - {situation.signalCount} signals - {formatReach(situation.reach)} reach
+                    </small>
+                  </span>
                     <b>{situation.score}</b>
                   </motion.button>
                 ))}
