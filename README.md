@@ -1,106 +1,134 @@
 # CrisisSignal AI
 
-Fullstack crisis operating system for learning, portfolio, and product-design practice. CrisisSignal AI simulates how an AI-assisted command center monitors early crisis signals, scores risk, coordinates response work, reviews public statements, and exports incident reports.
+Fullstack crisis operating system for learning, portfolio, and product-design practice. CrisisSignal AI simulates how an AI-assisted command center monitors early crisis signals, scores risk, coordinates response work, reviews public statements, saves reports, and publishes public incident updates.
 
 > Portfolio note: this repository is a public education/self-learning project. Real production connectors, private API keys, internal datasets, and deployment secrets are intentionally not included.
 
 ## Concept
 
-CrisisSignal AI is built around one operational idea: organizations should not wait until a crisis becomes viral before they act. The system turns scattered signals into an incident workspace with risk score, lifecycle status, SLA pressure, evidence review, team workflow, communication approval, and audit trail.
-
-Core operating flow:
+Organizations often discover a crisis after it has already spread. CrisisSignal AI turns scattered early signals into an operating workspace with risk score, lifecycle status, SLA pressure, evidence review, connector health, team workflow, notification queue, communication approval, saved reports, public status page, and audit trail.
 
 ```text
-Signal intake -> Risk scoring -> Incident lifecycle -> War room readiness -> Team workflow -> Statement approval -> Report export
+Signal intake -> Risk scoring -> Incident lifecycle -> War room readiness -> Team workflow -> Statement approval -> Saved report -> Public status update
 ```
 
 ## UI/UX Direction
 
-- Minimal brutalism interface with strong borders, sharp hierarchy, dark/light theme, and compact command-center density.
-- Interactive motion using Framer Motion: hero entry, risk orbit, cursor field, command palette, drawer transitions, map pin pulse, and scroll-driven frame animation.
-- Operator-first UX: fast scan metrics, active incident cards, war room readiness, lifecycle/SLA card, command palette with Ctrl+K, and action-oriented panels.
-- Multilingual interface: Indonesian and English as primary languages, with additional Melayu, Japanese, and Arabic interface options.
-- Responsive dashboard layout for desktop and mobile command workflows.
-
-## Repository
-
-`crisis-signal-ai`
+- Minimal brutalism command-center UI with strong borders, compact density, sharp hierarchy, and dark/light theme.
+- Interactive motion using Framer Motion: hero entry, risk orbit, cursor field, command palette, drawer tabs, map pin pulse, and scroll-driven frame animation.
+- Operator-first UX: fast scan metrics, active incident cards, lifecycle/SLA card, war room readiness, connector center, notification center, and Ctrl+K command palette.
+- Multilingual interface: Indonesian and English as primary languages, with Melayu, Japanese, and Arabic interface options.
+- Mobile operator mode: sticky bottom action bar, compact navigation, and responsive panels.
 
 ## GitHub Description
 
-Fullstack AI crisis command center with real-time monitoring simulation, risk scoring, incident lifecycle, SLA pressure, approval workflow, live feed, PDF reports, Prisma SQLite, multilingual UI, and animated React dashboard.
+Fullstack AI crisis command center with auth session, risk scoring, incident lifecycle, SLA engine, data connectors, notifications, approval workflow, saved reports, public status page, Prisma SQLite, and animated React UI.
 
 ## Stack Badges
 
-### Programming Languages
-
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-111111?style=for-the-badge&logo=javascript&logoColor=F7DF1E)
-![SQL](https://img.shields.io/badge/SQL-336791?style=for-the-badge&logo=sqlite&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-
-### Frontend
-
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Framer Motion](https://img.shields.io/badge/Framer_Motion-0055FF?style=for-the-badge&logo=framer&logoColor=white)
-![Lucide](https://img.shields.io/badge/Lucide_React-111111?style=for-the-badge&logo=lucide&logoColor=white)
-
-### Backend & Database
-
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-111111?style=for-the-badge&logo=express&logoColor=white)
 ![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)
 ![PDFKit](https://img.shields.io/badge/PDFKit-FF3B30?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)
 
+## Completion Checklist
+
+- Real Auth + Session: email/password demo login, bcrypt hashes, JWT cookie session, logout, session endpoint, role-protected API routes.
+- Data Source Connector: connector registry for RSS/news, weather API, citizen webhook report, mock social listening, and CSV import.
+- Incident Lifecycle: `new`, `triaging`, `verified`, `responding`, `monitoring`, `resolved` support with computed lifecycle and Prisma Incident model.
+- Notification System: in-app notification, email mock, webhook mock, and Slack-style mock queue.
+- Better Database Design: Organization, Incident, IncidentSignal, SourceConnector, Notification, IncidentComment, Attachment, SavedReport.
+- Incident Detail Page: tabbed incident drawer for Overview, Evidence, Timeline, Playbook, Approvals, Report, and Audit.
+- AI Explanation Panel: confidence, leading factors, influential signals, missing evidence, and verification recommendation.
+- Command Palette: Ctrl+K search for incidents, sections, scenarios, report export, reset, and actions.
+- Empty/Loading/Error States: API-down panel, no-match state, auth prompts for protected actions, report loading state.
+- Interactive Map Upgrade: layer toggle for risk, reach, source, and verification confidence.
+- Responsive Mobile Command Mode: sticky bottom action bar and compact mobile controls.
+- API Validation: Zod validation for auth, ingest, approvals, connector run, and scenario input.
+- Pagination + Filters: signals, live feed, approvals, and audit endpoints support pagination/filter style responses.
+- Rate Limit + Security Headers: Helmet, CORS credentials, request size limit, basic rate limit, and Morgan request logging.
+- Premium PDF Report: cover, executive summary, risk breakdown, AI explanation, timeline, approval log, evidence appendix, and audit trail.
+- Saved Reports: report history stored in Prisma.
+- Crisis Simulation Lab: scenario simulator plus connector-run simulations for staged signal intake.
+- Team Collaboration: comment, attachment, owner, and task data model support.
+- SLA Engine: critical 15m, high 30m, medium 2h, low monitor window, pressure and countdown UI.
+- Public Status Page: `/status/:incidentId`.
+
 ## Core Features
 
 - Real-time crisis monitoring simulation from news, RSS, X/Twitter, TikTok, weather, citizen reports, and community signals.
 - AI-style risk engine for signal clustering, risk score, score breakdown, escalation level, recommendation, timeline, and audit reasoning.
-- Incident lifecycle: `new`, `triaging`, `verified`, `responding`, `monitoring`, and `resolved` model support.
-- SLA engine with deadline, elapsed time, remaining minutes, pressure, and healthy/watch/urgent/breached state.
 - Crisis war room with readiness score, evidence health, team readiness, approval blockers, fresh events, and next operational move.
-- Command palette with Ctrl+K for opening sections, running scenarios, exporting reports, resetting demo data, and jumping to incidents.
-- Role-based demo session for Admin, Analyst, Comms, Field Verifier, and Viewer.
+- Role-based secure demo session for Admin, Analyst, Comms, Field Verifier, and Viewer.
 - Statement approval workflow: review, approved, published, rejected.
 - Live command feed powered by backend events.
-- Scenario simulator for flood surge, scam spike, and crowd risk.
 - Exportable JSON and PDF incident reports.
 - Prisma SQLite database with seed data and local bootstrap script.
 - Multilingual UI, dark/light mode, cursor motion layer, and 320-frame scroll animation assets.
-- API hardening with request size limit, simple rate limit, security headers, and payload validation.
 
 ## Project Structure
 
 ```text
 crisis-signal-ai/
-├─ prisma/
-│  ├─ schema.prisma
-│  ├─ bootstrap.js
-│  └─ seed.js
-├─ public/
-│  ├─ brand/
-│  └─ crisis-frames/
-├─ server/
-│  ├─ db.js
-│  ├─ index.js
-│  └─ lib/crisisEngine.js
-├─ src/
-│  ├─ lib/
-│  ├─ App.tsx
-│  └─ App.css
-└─ package.json
+|-- prisma/
+|   |-- schema.prisma
+|   |-- bootstrap.js
+|   `-- seed.js
+|-- public/
+|   |-- brand/
+|   `-- crisis-frames/
+|-- server/
+|   |-- db.js
+|   |-- index.js
+|   `-- lib/crisisEngine.js
+|-- src/
+|   |-- lib/
+|   |-- App.tsx
+|   `-- App.css
+`-- package.json
 ```
 
-## Commands
+## Run Local
+
+First run:
 
 ```bash
 npm install
+npm run db:push
 npm run db:seed
 npm run dev
 ```
+
+Daily run after setup:
+
+```bash
+npm run dev
+```
+
+Local URLs:
+
+- Frontend: `http://127.0.0.1:5177`
+- API: `http://127.0.0.1:4177`
+- Public status page example: `http://127.0.0.1:4177/status/weather_extreme`
+
+Demo login:
+
+```text
+admin@crisissignal.ai
+CrisisSignal2026!
+```
+
+Other demo accounts use the same password:
+
+- `analyst@crisissignal.ai`
+- `comms@crisissignal.ai`
+- `field@crisissignal.ai`
+- `viewer@crisissignal.ai`
 
 Useful checks:
 
@@ -110,32 +138,42 @@ npm run lint
 npm run start
 ```
 
-`npm run dev` runs the Vite frontend and Express backend together.
-
 ## API Overview
 
 - `GET /api/health`
 - `GET /api/dashboard`
-- `GET /api/live`
 - `GET /api/users`
+- `GET /api/auth/session`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
 - `GET /api/signals`
+- `GET /api/live`
+- `GET /api/audit`
 - `GET /api/situations/:id`
 - `GET /api/situations/:id/report`
 - `GET /api/situations/:id/report.pdf`
-- `POST /api/auth/login`
+- `POST /api/situations/:id/report/save`
 - `POST /api/ingest`
 - `POST /api/simulate`
 - `POST /api/reset-demo`
 - `GET /api/approvals`
 - `POST /api/approvals`
 - `PATCH /api/approvals/:id`
+- `GET /api/connectors`
+- `POST /api/connectors/run`
+- `POST /api/connectors/webhook/report`
+- `POST /api/connectors/csv`
+- `GET /api/notifications`
+- `POST /api/notifications`
+- `GET /api/reports`
+- `GET /status/:incidentId`
 
 ## GitHub Safety
 
 Do not push private or generated local files:
 
 - `.env`, `.env.local`, `.env.production`
-- real API keys, tokens, cookies, or OAuth secrets
+- real API keys, tokens, cookies, OAuth secrets
 - `prisma/dev.db`, SQLite files, local database journals
 - `node_modules`, `dist`, coverage output
 - private datasets, private reports, private connector credentials
@@ -146,32 +184,24 @@ Safe portfolio files:
 - `src`, `server`, `prisma/schema.prisma`, `prisma/bootstrap.js`, `prisma/seed.js`
 - public demo assets in `public`
 - `README.md`, config files, `.gitignore`, and package files
-- `server/data/crisis-db.json` only because it is demo seed data, not private data
+- `server/data/crisis-db.json` only because it is demo seed data
 
 Check before push:
 
 ```bash
 git status --short
-git ls-files .env prisma/dev.db dist node_modules
+git ls-files .env prisma/dev.db dist node_modules "*.db" "*.sqlite"
 git diff --cached --name-only
 ```
 
 Recommended push:
 
 ```bash
-git add .gitignore README.md server/lib/crisisEngine.js server/index.js src/App.tsx src/App.css src/lib/types.ts
-git commit -m "Upgrade crisis lifecycle and command operations"
+git add .gitignore README.md package.json package-lock.json prisma/schema.prisma prisma/bootstrap.js prisma/seed.js server/db.js server/index.js server/lib/crisisEngine.js src/lib/api.ts src/lib/types.ts src/App.tsx src/App.css
+git commit -m "Upgrade CrisisSignal AI operating system"
 git push
 ```
 
 ## GitHub Topics
 
 `crisis-management`, `risk-intelligence`, `situational-awareness`, `disaster-response`, `brand-safety`, `social-listening`, `react`, `typescript`, `express`, `prisma`, `sqlite`, `framer-motion`, `portfolio-project`
-
-## Next Roadmap
-
-- Persist incidents as a dedicated Prisma model.
-- Add source connector registry and connector health checks.
-- Add notifications for email/webhook/Slack-style channels.
-- Add saved report history.
-- Add incident comments, assignments, and public status page.

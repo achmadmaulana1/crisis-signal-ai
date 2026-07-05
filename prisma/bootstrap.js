@@ -9,8 +9,10 @@ const db = new Database(dbPath)
 db.exec(`
   CREATE TABLE IF NOT EXISTS "User" (
     "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL UNIQUE,
+    "passwordHash" TEXT NOT NULL DEFAULT '',
     "role" TEXT NOT NULL,
     "avatar" TEXT NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -79,7 +81,96 @@ db.exec(`
     "situationId" TEXT,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS "Organization" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "name" TEXT NOT NULL,
+    "plan" TEXT NOT NULL,
+    "region" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "Incident" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "organizationId" TEXT,
+    "category" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "owner" TEXT NOT NULL,
+    "severity" TEXT NOT NULL,
+    "publicStatus" TEXT NOT NULL,
+    "dueAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "IncidentSignal" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "incidentId" TEXT NOT NULL,
+    "signalId" TEXT NOT NULL,
+    "weight" INTEGER NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "SourceConnector" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "type" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "config" TEXT NOT NULL,
+    "lastRunAt" DATETIME,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "Notification" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "channel" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "status" TEXT NOT NULL,
+    "situationId" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "IncidentComment" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "situationId" TEXT NOT NULL,
+    "author" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "internal" BOOLEAN NOT NULL DEFAULT 1,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "Attachment" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "situationId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS "SavedReport" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "situationId" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "format" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "createdBy" TEXT NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `)
+
+for (const statement of [
+  'ALTER TABLE "User" ADD COLUMN "organizationId" TEXT',
+  'ALTER TABLE "User" ADD COLUMN "passwordHash" TEXT NOT NULL DEFAULT ""',
+]) {
+  try {
+    db.exec(statement)
+  } catch (error) {
+    if (!String(error.message).includes('duplicate column')) throw error
+  }
+}
 
 db.close()
 console.log(`SQLite database ready at ${dbPath}`)

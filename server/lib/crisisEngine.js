@@ -46,6 +46,7 @@ export function clusterSituations(signals, auditTrail = [], playbookTasks = []) 
           note: item.summary,
         }))
 
+      const explanation = explainRisk(category, items, score)
       return {
         id: category,
         category,
@@ -63,6 +64,7 @@ export function clusterSituations(signals, auditTrail = [], playbookTasks = []) 
         signalCount: items.length,
         summary: summarizeSituation(category, items, score),
         nextAction: recommendAction(category, score, items),
+        explanation,
         statement: generateStatement(category, score, peak.location),
         playbook: buildPlaybook(category, score, playbookTasks.filter((task) => task.situationId === category)),
         timeline,
@@ -139,6 +141,13 @@ export function dashboardSummary(db) {
     liveEvents: db.liveEvents || [],
     warRoom: buildWarRoom(situations, db.approvals || [], db.liveEvents || [], db.teams || []),
     teams: db.teams,
+    organizations: db.organizations || [],
+    incidents: db.incidents || [],
+    connectors: connectorSummary(db.connectors || []),
+    notifications: db.notifications || [],
+    comments: db.comments || [],
+    attachments: db.attachments || [],
+    savedReports: db.savedReports || [],
     latestAudit: db.auditTrail.slice(0, 8),
   }
 }
@@ -156,6 +165,7 @@ export function buildReport(db, situationId) {
       summary: situation.summary,
       recommendation: situation.nextAction.primary,
       statement: situation.statement,
+      riskExplanation: situation.explanation,
       auditReasons: situation.audit.map((item) => item.reason),
     },
   }
@@ -350,6 +360,58 @@ function buildAlerts(situations) {
           ? `${situation.title} requires immediate response room activation.`
           : `${situation.title} crossed the high-risk threshold or public reach guardrail.`,
     }))
+}
+
+function connectorSummary(connectors) {
+  const online = connectors.filter((item) => item.status === 'online').length
+  const degraded = connectors.filter((item) => item.status === 'degraded').length
+  const offline = connectors.filter((item) => item.status === 'offline').length
+
+  return {
+    total: connectors.length,
+    online,
+    degraded,
+    offline,
+    health: Math.round((online / Math.max(1, connectors.length)) * 100),
+    items: connectors,
+  }
+}
+
+function explainRisk(category, items, score) {
+  const breakdown = aggregateBreakdown(items)
+  const sortedFactors = Object.entries(breakdown)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([name, value]) => ({ name, value }))
+  const influentialSignals = items
+    .slice()
+    .sort((a, b) => scoreSignal(b) - scoreSignal(a))
+    .slice(0, 3)
+    .map((signal) => ({
+      id: signal.id,
+      title: signal.title,
+      source: signal.source,
+      score: scoreSignal(signal),
+      credibility: signal.credibility,
+    }))
+  const confirmed = items.filter((item) => verificationStatus(item) === 'confirmed').length
+  const confidence = Math.min(97, Math.max(35, Math.round(score * 0.42 + confirmed * 16 + Math.min(24, items.length * 4))))
+  const missingEvidence = [
+    confirmed < 2 ? 'More confirmed sources are needed before a strong public claim.' : null,
+    items.some((item) => item.credibility < 58) ? 'Some low-credibility signals should be rechecked.' : null,
+    items.length < 4 ? 'Additional independent signals would improve confidence.' : null,
+  ].filter(Boolean)
+
+  return {
+    confidence,
+    leadingFactors: sortedFactors,
+    influentialSignals,
+    missingEvidence: missingEvidence.length ? missingEvidence : ['Evidence coverage is acceptable for the current response stage.'],
+    verificationRecommendation:
+      confidence >= 78
+        ? `Continue ${titleForCategory(category).toLowerCase()} response and refresh evidence every 15 minutes.`
+        : 'Prioritize source confirmation, origin screenshots, and field verification before broader publication.',
+  }
 }
 
 function buildWarRoom(situations, approvals = [], liveEvents = [], teams = []) {

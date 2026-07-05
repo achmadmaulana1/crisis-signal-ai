@@ -7,12 +7,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id
-  name      String
-  email     String   @unique
-  role      String
-  avatar    String
-  createdAt DateTime @default(now())
+  id           String   @id
+  organizationId String?
+  name         String
+  email        String   @unique
+  passwordHash String   @default("")
+  role         String
+  avatar       String
+  createdAt    DateTime @default(now())
 }
 
 model Signal {
@@ -76,5 +78,83 @@ model LiveEvent {
   title       String
   message     String
   situationId String?
+  createdAt   DateTime @default(now())
+}
+
+model Organization {
+  id        String   @id
+  name      String
+  plan      String
+  region    String
+  createdAt DateTime @default(now())
+}
+
+model Incident {
+  id             String   @id
+  organizationId String?
+  category       String
+  title          String
+  status         String
+  owner          String
+  severity       String
+  publicStatus   String
+  dueAt          DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model IncidentSignal {
+  id         String   @id
+  incidentId String
+  signalId   String
+  weight     Int
+  createdAt  DateTime @default(now())
+}
+
+model SourceConnector {
+  id        String   @id
+  type      String
+  name      String
+  status    String
+  config    String
+  lastRunAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id
+  channel     String
+  title       String
+  message     String
+  status      String
+  situationId String?
+  createdAt   DateTime @default(now())
+}
+
+model IncidentComment {
+  id          String   @id
+  situationId String
+  author      String
+  body        String
+  internal    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+}
+
+model Attachment {
+  id          String   @id
+  situationId String
+  name        String
+  kind        String
+  url         String
+  createdAt   DateTime @default(now())
+}
+
+model SavedReport {
+  id          String   @id
+  situationId String
+  title       String
+  format      String
+  content     String
+  createdBy   String
   createdAt   DateTime @default(now())
 }

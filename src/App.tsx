@@ -49,12 +49,18 @@ import {
 } from 'framer-motion'
 import {
   createApproval,
+  createNotification,
   getDashboard,
   getLiveEvents,
+  getSession,
   getSituationReport,
   ingestSignal,
+  loginWithEmail,
   loginRole,
+  logoutSession,
   pdfReportUrl,
+  runConnector,
+  saveSituationReport,
   resetDemo,
   simulateScenario,
   updateApproval,
@@ -64,6 +70,8 @@ import './App.css'
 
 type Theme = 'dark' | 'light'
 type Language = 'id' | 'en' | 'ms' | 'ja' | 'ar'
+type DetailTab = 'overview' | 'evidence' | 'timeline' | 'playbook' | 'approvals' | 'report' | 'audit'
+type MapLayer = 'risk' | 'reach' | 'source' | 'verification'
 
 const repoName = 'crisis-signal-ai'
 const totalFrames = 320
@@ -448,9 +456,14 @@ function App() {
   const [levelFilter, setLevelFilter] = useState<'all' | RiskLevel>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | Category>('all')
   const [detailOpen, setDetailOpen] = useState(false)
+  const [detailTab, setDetailTab] = useState<DetailTab>('overview')
+  const [mapLayer, setMapLayer] = useState<MapLayer>('risk')
   const [commandMode, setCommandMode] = useState(false)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [commandQuery, setCommandQuery] = useState('')
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authForm, setAuthForm] = useState({ email: 'admin@crisissignal.ai', password: 'CrisisSignal2026!' })
+  const [toast, setToast] = useState('')
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
   const [busyAction, setBusyAction] = useState('')
   const [currentUser, setCurrentUser] = useState<User | null>(null)
@@ -538,7 +551,9 @@ function App() {
       .then((data) => {
         setDashboard(data)
         setActiveId(data.situations[0]?.id ?? 'weather_extreme')
-        setCurrentUser(data.users[0] ?? null)
+        getSession()
+          .then((session) => setCurrentUser(session.user ?? null))
+          .catch(() => setCurrentUser(null))
         setLiveEvents(data.liveEvents ?? [])
       })
       .catch((reason: Error) => setError(reason.message))
@@ -717,6 +732,7 @@ function App() {
   function selectSituation(id: Category, openDrawer = true) {
     setActiveId(id)
     setDetailOpen(openDrawer)
+    setDetailTab('overview')
   }
 
   async function switchRole(role: UserRole) {
@@ -725,6 +741,77 @@ function App() {
       const result = await loginRole(role)
       setCurrentUser(result.user)
       setLiveEvents(await getLiveEvents())
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function loginDemo() {
+    setBusyAction('login')
+    try {
+      const result = await loginWithEmail(authForm.email, authForm.password)
+      setCurrentUser(result.user)
+      setAuthOpen(false)
+      setToast(`Logged in as ${result.user.role}`)
+      setLiveEvents(await getLiveEvents())
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function logoutDemo() {
+    await logoutSession()
+    setCurrentUser(null)
+    setToast('Session ended')
+  }
+
+  async function runConnectorAction(type: string) {
+    setBusyAction(`connector-${type}`)
+    try {
+      const result = await runConnector(type)
+      setDashboard(result.dashboard)
+      setActiveId(result.signal.category)
+      setToast(`${type} connector ingested a signal`)
+      setLiveEvents(await getLiveEvents())
+    } catch (error) {
+      setAuthOpen(true)
+      setToast(error instanceof Error ? error.message : 'Connector failed')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function saveReportAction() {
+    if (!activeSituation) return
+    setBusyAction('save-report')
+    try {
+      await saveSituationReport(activeSituation.id)
+      setDashboard(await getDashboard())
+      setToast('Report saved to history')
+    } catch (error) {
+      setAuthOpen(true)
+      setToast(error instanceof Error ? error.message : 'Failed to save report')
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function notifyAction(channel: string) {
+    if (!activeSituation) return
+    setBusyAction(`notify-${channel}`)
+    try {
+      await createNotification({
+        channel,
+        title: `${activeSituation.title} update`,
+        message: activeSituation.nextAction.primary,
+        situationId: activeSituation.id,
+      })
+      setDashboard(await getDashboard())
+      setLiveEvents(await getLiveEvents())
+      setToast(`${channel} notification queued`)
+    } catch (error) {
+      setAuthOpen(true)
+      setToast(error instanceof Error ? error.message : 'Notification failed')
     } finally {
       setBusyAction('')
     }
@@ -843,6 +930,62 @@ function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      <AnimatePresence>
+        {authOpen && (
+          <motion.div
+            className="auth-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={() => setAuthOpen(false)}
+          >
+            <motion.div
+              className="auth-modal panel"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-title">
+                <LockKeyhole />
+                <div>
+                  <strong>Secure operator login</strong>
+                  <small>Email/password session cookie with role permissions.</small>
+                </div>
+              </div>
+              <label>
+                Email
+                <input value={authForm.email} onChange={(event) => setAuthForm({ ...authForm, email: event.target.value })} />
+              </label>
+              <label>
+                Password
+                <input
+                  type="password"
+                  value={authForm.password}
+                  onChange={(event) => setAuthForm({ ...authForm, password: event.target.value })}
+                />
+              </label>
+              <button type="button" className="primary-action submit" onClick={loginDemo} disabled={busyAction === 'login'}>
+                {busyAction === 'login' ? 'Signing in...' : 'Sign in'}
+              </button>
+              <small className="auth-hint">Demo password: CrisisSignal2026!</small>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="toast"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 14 }}
+            onAnimationComplete={() => window.setTimeout(() => setToast(''), 2600)}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <section className="hero" id="top">
         <nav className="nav">
           <a className="brand" href="#top" aria-label="CrisisSignal AI">
@@ -882,6 +1025,15 @@ function App() {
                 ))}
               </select>
             </div>
+            {currentUser ? (
+              <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
+                {currentUser.avatar} Logout
+              </button>
+            ) : (
+              <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
+                Login
+              </button>
+            )}
             <button
               type="button"
               className="nav-command"
@@ -1160,6 +1312,88 @@ function App() {
           </div>
         </section>
       )}
+
+      <section className="systems-grid">
+        <div className="connector-panel panel">
+          <div className="panel-title">
+            <Database />
+            <div>
+              <strong>Data source connectors</strong>
+              <small>RSS/news, weather API, webhook, mock social listening, and CSV intake.</small>
+            </div>
+          </div>
+          <div className="connector-health">
+            <strong>{dashboard.connectors.health}%</strong>
+            <span>{dashboard.connectors.online}/{dashboard.connectors.total} online</span>
+          </div>
+          <div className="connector-list">
+            {dashboard.connectors.items.map((connector) => (
+              <button
+                type="button"
+                className={`connector-item ${connector.status}`}
+                key={connector.id}
+                onClick={() => runConnectorAction(connector.type)}
+                disabled={busyAction === `connector-${connector.type}`}
+              >
+                <span>{connector.status}</span>
+                <strong>{connector.name}</strong>
+                <small>{connector.type} {connector.lastRunAt ? `- ${new Date(connector.lastRunAt).toLocaleTimeString()}` : ''}</small>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="notification-panel panel">
+          <div className="panel-title">
+            <BellRing />
+            <div>
+              <strong>Notification center</strong>
+              <small>In-app, email mock, webhook mock, Slack/Discord style queue.</small>
+            </div>
+          </div>
+          <div className="notify-actions">
+            {['in_app', 'email_mock', 'webhook_mock', 'slack_mock'].map((channel) => (
+              <button
+                type="button"
+                key={channel}
+                onClick={() => notifyAction(channel)}
+                disabled={busyAction === `notify-${channel}`}
+              >
+                {channel.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+          <div className="notification-list">
+            {dashboard.notifications.slice(0, 4).map((notification) => (
+              <span key={notification.id}>
+                <strong>{notification.title}</strong>
+                <small>{notification.channel} - {notification.status}</small>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="report-history-panel panel">
+          <div className="panel-title">
+            <FileText />
+            <div>
+              <strong>Saved reports</strong>
+              <small>Incident reports stored in Prisma for review history.</small>
+            </div>
+          </div>
+          <button type="button" className="primary-action submit" onClick={saveReportAction} disabled={busyAction === 'save-report'}>
+            {busyAction === 'save-report' ? 'Saving...' : 'Save active report'}
+          </button>
+          <div className="notification-list">
+            {dashboard.savedReports.slice(0, 3).map((report) => (
+              <span key={report.id}>
+                <strong>{report.title}</strong>
+                <small>{report.format} - {new Date(report.createdAt).toLocaleDateString()}</small>
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {activeSituation && (
         <section className="operating-grid">
@@ -1487,6 +1721,38 @@ function App() {
             </div>
           </div>
 
+          <div className="explanation-panel panel">
+            <div className="panel-title">
+              <Brain />
+              <div>
+                <strong>Why this risk score?</strong>
+                <small>Transparent scoring explanation for analyst review.</small>
+              </div>
+            </div>
+            <div className="confidence-card">
+              <strong>{activeSituation.explanation.confidence}%</strong>
+              <span>confidence</span>
+            </div>
+            <div className="factor-list">
+              {activeSituation.explanation.leadingFactors.map((factor) => (
+                <span key={factor.name}>
+                  <b>{factor.name}</b>
+                  <i><em style={{ width: `${Math.min(100, factor.value * 3)}%` }} /></i>
+                  <strong>{factor.value}</strong>
+                </span>
+              ))}
+            </div>
+            <div className="influence-list">
+              {activeSituation.explanation.influentialSignals.map((signal) => (
+                <span key={signal.id}>
+                  <strong>{signal.title}</strong>
+                  <small>{signal.source} - score {signal.score} - credibility {signal.credibility}</small>
+                </span>
+              ))}
+            </div>
+            <p>{activeSituation.explanation.verificationRecommendation}</p>
+          </div>
+
           <div className="map-panel panel">
             <div className="panel-title">
               <MapPin />
@@ -1495,15 +1761,28 @@ function App() {
                 <small>Lokasi sinyal aktif dan radius eskalasi.</small>
               </div>
             </div>
+            <div className="layer-toggle">
+              {(['risk', 'reach', 'source', 'verification'] as MapLayer[]).map((layer) => (
+                <button
+                  type="button"
+                  key={layer}
+                  className={mapLayer === layer ? 'active' : ''}
+                  onClick={() => setMapLayer(layer)}
+                >
+                  {layer}
+                </button>
+              ))}
+            </div>
             <div className="map-canvas">
               {dashboard.situations.map((situation) => (
                 <motion.button
                   type="button"
                   key={situation.id}
-                  className={`map-pin ${situation.level}`}
+                  className={`map-pin ${situation.level} layer-${mapLayer}`}
                   style={{
                     left: `${Math.min(86, Math.max(12, ((situation.lng - 106) / 8) * 74 + 16))}%`,
                     top: `${Math.min(84, Math.max(12, (Math.abs(situation.lat) / 9) * 68 + 8))}%`,
+                    opacity: mapLayer === 'verification' ? Math.max(0.45, situation.explanation.confidence / 100) : 1,
                   }}
                   onClick={() => selectSituation(situation.id)}
                   animate={{ scale: situation.level === 'critical' ? [1, 1.12, 1] : 1 }}
@@ -1660,54 +1939,122 @@ function App() {
               </button>
             </div>
             <p>{activeSituation.summary}</p>
+            <div className="drawer-tabs">
+              {(['overview', 'evidence', 'timeline', 'playbook', 'approvals', 'report', 'audit'] as DetailTab[]).map((tab) => (
+                <button
+                  type="button"
+                  key={tab}
+                  className={detailTab === tab ? 'active' : ''}
+                  onClick={() => setDetailTab(tab)}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
             <div className="drawer-actions">
               <button type="button" className="primary-action" onClick={exportReport}>
                 <Download size={17} /> Export
               </button>
+              <button type="button" className="secondary-action" onClick={saveReportAction}>
+                <FileText size={17} /> Save
+              </button>
+              <a className="secondary-action" href={`/status/${activeSituation.id}`} target="_blank" rel="noreferrer">
+                Public status <ArrowUpRight size={17} />
+              </a>
               <a className="secondary-action" href="#response" onClick={() => setDetailOpen(false)}>
                 Open response <ArrowUpRight size={17} />
               </a>
             </div>
-            <div className="drawer-grid">
-              <span>
-                <Gauge size={16} /> {activeSituation.score} risk
-              </span>
-              <span>
-                <RadioTower size={16} /> {activeSituation.signalCount} signals
-              </span>
-              <span>
-                <Globe2 size={16} /> {formatReach(activeSituation.reach)} reach
-              </span>
-            </div>
-            <div className="drawer-section">
-              <strong>{t.statement}</strong>
-              <blockquote>{activeSituation.statement}</blockquote>
-            </div>
-            <div className="drawer-section">
-              <strong>{t.sourceVerification}</strong>
-              {activeSituation.evidence.map((item) => (
-                <span className="drawer-line" key={item.id}>
-                  <BadgeCheck size={15} /> {item.title} - {item.verification.replace('_', ' ')}
-                </span>
-              ))}
-            </div>
-            <div className="drawer-section">
-              <strong>{t.audit}</strong>
-              {activeSituation.audit.length > 0 ? (
-                activeSituation.audit.map((item) => (
+            {detailTab === 'overview' && (
+              <>
+                <div className="drawer-grid">
+                  <span><Gauge size={16} /> {activeSituation.score} risk</span>
+                  <span><RadioTower size={16} /> {activeSituation.signalCount} signals</span>
+                  <span><Globe2 size={16} /> {formatReach(activeSituation.reach)} reach</span>
+                  <span><Activity size={16} /> {activeSituation.lifecycle}</span>
+                </div>
+                <div className="drawer-section">
+                  <strong>{t.statement}</strong>
+                  <blockquote>{activeSituation.statement}</blockquote>
+                </div>
+              </>
+            )}
+            {detailTab === 'evidence' && (
+              <div className="drawer-section">
+                <strong>{t.sourceVerification}</strong>
+                {activeSituation.evidence.map((item) => (
                   <span className="drawer-line" key={item.id}>
-                    <FileText size={15} /> {item.reason}
+                    <BadgeCheck size={15} /> {item.title} - {item.verification.replace('_', ' ')}
                   </span>
-                ))
-              ) : (
-                <span className="drawer-line">
-                  <FileText size={15} /> No audit event yet for this incident.
-                </span>
-              )}
-            </div>
+                ))}
+              </div>
+            )}
+            {detailTab === 'timeline' && (
+              <div className="drawer-section">
+                <strong>{t.timeline}</strong>
+                {activeSituation.timeline.map((item) => (
+                  <span className="drawer-line" key={item.id}>
+                    <History size={15} /> {new Date(item.time).toLocaleString()} - {item.title}
+                  </span>
+                ))}
+              </div>
+            )}
+            {detailTab === 'playbook' && (
+              <div className="drawer-section">
+                <strong>{t.playbook}</strong>
+                {activeSituation.playbook.map((item) => (
+                  <span className="drawer-line" key={item.id}>
+                    <CheckCircle2 size={15} /> {item.label} - {item.owner}
+                  </span>
+                ))}
+              </div>
+            )}
+            {detailTab === 'approvals' && (
+              <div className="drawer-section">
+                <strong>{t.approvalTitle}</strong>
+                {activeApprovals.length ? activeApprovals.map((item) => (
+                  <span className="drawer-line" key={item.id}>
+                    <Send size={15} /> {item.status} - {item.note}
+                  </span>
+                )) : <span className="drawer-line">{t.noApproval}</span>}
+              </div>
+            )}
+            {detailTab === 'report' && (
+              <div className="drawer-section">
+                <strong>Report history</strong>
+                {dashboard.savedReports.filter((item) => item.situationId === activeSituation.id).map((item) => (
+                  <span className="drawer-line" key={item.id}>
+                    <FileText size={15} /> {item.title}
+                  </span>
+                ))}
+              </div>
+            )}
+            {detailTab === 'audit' && (
+              <div className="drawer-section">
+                <strong>{t.audit}</strong>
+                {activeSituation.audit.length > 0 ? (
+                  activeSituation.audit.map((item) => (
+                    <span className="drawer-line" key={item.id}>
+                      <FileText size={15} /> {item.reason}
+                    </span>
+                  ))
+                ) : (
+                  <span className="drawer-line">
+                    <FileText size={15} /> No audit event yet for this incident.
+                  </span>
+                )}
+              </div>
+            )}
           </motion.aside>
         )}
       </AnimatePresence>
+
+      <div className="mobile-action-bar">
+        <a href="#monitor"><RadioTower size={16} /> Monitor</a>
+        <a href="#response"><ShieldAlert size={16} /> Response</a>
+        <button type="button" onClick={() => setCommandPaletteOpen(true)}><Search size={16} /> Command</button>
+        <button type="button" onClick={() => activeSituation && selectSituation(activeSituation.id)}><FileText size={16} /> Detail</button>
+      </div>
 
       <footer className="site-footer">
         <div className="footer-identity panel">

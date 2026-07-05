@@ -61,6 +61,19 @@ export type Situation = {
     primary: string
     steps: string[]
   }
+  explanation: {
+    confidence: number
+    leadingFactors: Array<{ name: string; value: number }>
+    influentialSignals: Array<{
+      id: string
+      title: string
+      source: Source
+      score: number
+      credibility: number
+    }>
+    missingEvidence: string[]
+    verificationRecommendation: string
+  }
   statement: string
   playbook: Array<{
     id: string
@@ -181,5 +194,69 @@ export type Dashboard = {
   liveEvents: LiveEvent[]
   warRoom: WarRoom
   teams: Team[]
+  organizations: Array<{ id: string; name: string; plan: string; region: string; createdAt: string }>
+  incidents: Array<{
+    id: string
+    organizationId: string | null
+    category: Category
+    title: string
+    status: IncidentLifecycle
+    owner: string
+    severity: string
+    publicStatus: string
+    dueAt: string | null
+    createdAt: string
+    updatedAt: string
+  }>
+  connectors: {
+    total: number
+    online: number
+    degraded: number
+    offline: number
+    health: number
+    items: Array<{
+      id: string
+      type: string
+      name: string
+      status: 'online' | 'degraded' | 'offline'
+      config: string
+      lastRunAt: string | null
+      createdAt: string
+    }>
+  }
+  notifications: Array<{
+    id: string
+    channel: string
+    title: string
+    message: string
+    status: string
+    situationId: Category | null
+    createdAt: string
+  }>
+  comments: Array<{
+    id: string
+    situationId: Category
+    author: string
+    body: string
+    internal: boolean
+    createdAt: string
+  }>
+  attachments: Array<{
+    id: string
+    situationId: Category
+    name: string
+    kind: string
+    url: string
+    createdAt: string
+  }>
+  savedReports: Array<{
+    id: string
+    situationId: Category
+    title: string
+    format: string
+    content: string
+    createdBy: string
+    createdAt: string
+  }>
   latestAudit: Situation['audit']
 }

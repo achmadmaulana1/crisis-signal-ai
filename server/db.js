@@ -10,7 +10,22 @@ const adapter = new PrismaBetterSqlite3({ url: dbPath }, { timestampFormat: 'iso
 export const prisma = new PrismaClient({ adapter })
 
 export async function readDb() {
-  const [signals, teams, auditTrail, users, approvals, playbookTasks, liveEvents] = await Promise.all([
+  const [
+    signals,
+    teams,
+    auditTrail,
+    users,
+    approvals,
+    playbookTasks,
+    liveEvents,
+    organizations,
+    incidents,
+    connectors,
+    notifications,
+    comments,
+    attachments,
+    savedReports,
+  ] = await Promise.all([
     prisma.signal.findMany({ orderBy: { timestamp: 'desc' } }),
     prisma.team.findMany(),
     prisma.auditLog.findMany({ orderBy: { time: 'desc' } }),
@@ -18,6 +33,13 @@ export async function readDb() {
     prisma.approvalRequest.findMany({ orderBy: { updatedAt: 'desc' } }),
     prisma.playbookTask.findMany({ orderBy: { updatedAt: 'desc' } }),
     prisma.liveEvent.findMany({ orderBy: { createdAt: 'desc' }, take: 20 }),
+    prisma.organization.findMany(),
+    prisma.incident.findMany({ orderBy: { updatedAt: 'desc' } }),
+    prisma.sourceConnector.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.notification.findMany({ orderBy: { createdAt: 'desc' }, take: 30 }),
+    prisma.incidentComment.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.attachment.findMany({ orderBy: { createdAt: 'desc' } }),
+    prisma.savedReport.findMany({ orderBy: { createdAt: 'desc' }, take: 20 }),
   ])
 
   return {
@@ -28,6 +50,13 @@ export async function readDb() {
     approvals,
     playbookTasks,
     liveEvents,
+    organizations,
+    incidents,
+    connectors,
+    notifications,
+    comments,
+    attachments,
+    savedReports,
   }
 }
 
