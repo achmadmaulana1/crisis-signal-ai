@@ -73,7 +73,6 @@ type Language = 'id' | 'en' | 'ms' | 'ja' | 'ar'
 type DetailTab = 'overview' | 'evidence' | 'timeline' | 'playbook' | 'approvals' | 'report' | 'audit'
 type MapLayer = 'risk' | 'reach' | 'source' | 'verification'
 
-const repoName = 'crisis-signal-ai'
 const totalFrames = 320
 
 const languageOptions: Array<{ code: Language; label: string; short: string }> = [
@@ -988,14 +987,26 @@ function App() {
       </AnimatePresence>
       <section className="hero" id="top">
         <nav className="nav">
-          <a className="brand" href="#top" aria-label="CrisisSignal AI">
-            <img src="/brand/crisis-signal-logo.png" alt="" />
-            <span>
-              <strong>CrisisSignal AI</strong>
-              <small>{repoName}</small>
-            </span>
-          </a>
+          <div className="nav-primary">
+            <a className="brand" href="#top" aria-label="CrisisSignal AI">
+              <img src="/brand/crisis-signal-logo.png" alt="" />
+              <span>
+                <strong>CrisisSignal AI</strong>
+                <small>AI crisis operating system</small>
+              </span>
+            </a>
+            <div className="nav-health" aria-label="System health">
+              <span className="live-dot" />
+              <strong>{dashboard.warRoom.operatingMode}</strong>
+              <small>{dashboard.connectors.health}% connectors</small>
+            </div>
+          </div>
           <div className="nav-actions">
+            <div className="nav-links">
+              <a href="#monitor">{t.navMonitor}</a>
+              <a href="#response">{t.navResponse}</a>
+              <a href="#war-room">War room</a>
+            </div>
             <div className="language-switcher" title={t.languageHint}>
               <Languages size={15} />
               <span>{activeLanguage.short}</span>
@@ -1042,9 +1053,8 @@ function App() {
             >
               {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
               {t.command}
+              <kbd>Ctrl K</kbd>
             </button>
-            <a href="#monitor">{t.navMonitor}</a>
-            <a href="#response">{t.navResponse}</a>
             <button
               type="button"
               className="icon-button"
