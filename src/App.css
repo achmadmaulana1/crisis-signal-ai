@@ -126,11 +126,11 @@
   top: 16px;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) auto;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.35fr);
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  padding: 11px;
+  gap: 16px;
+  padding: 12px;
   border: 2px solid var(--line);
   background:
     linear-gradient(90deg, color-mix(in srgb, var(--cyan) 10%, transparent), transparent 45%),
@@ -140,15 +140,16 @@
 }
 
 .nav-primary {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr);
   align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
 .brand,
-.nav-actions,
 .nav-links,
+.nav-controls,
 .hero-actions,
 .kicker,
 .command-head,
@@ -199,7 +200,7 @@
   border: 2px solid var(--line);
   background: var(--panel-strong);
   box-shadow: 4px 4px 0 var(--shadow);
-  min-width: 190px;
+  min-width: 0;
 }
 
 .live-dot {
@@ -235,16 +236,33 @@
 }
 
 .nav-actions {
-  gap: 8px;
-  justify-content: end;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .nav-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
   padding: 5px;
   border: 2px solid var(--line);
   background: color-mix(in srgb, var(--panel-strong) 82%, transparent);
   box-shadow: 4px 4px 0 var(--shadow);
+  min-width: 0;
+}
+
+.nav-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nav-controls > * {
+  flex: 0 1 auto;
 }
 
 .language-switcher {
@@ -253,7 +271,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 2px solid var(--line);
   color: var(--ink);
   background: color-mix(in srgb, var(--cyan) 26%, var(--panel-strong));
@@ -293,7 +311,7 @@
 }
 
 .language-switcher select {
-  max-width: 104px;
+  max-width: 88px;
   border: 0;
   color: inherit;
   background: transparent;
@@ -319,7 +337,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 0 10px;
+  padding: 0 8px;
   border: 2px solid var(--line);
   color: #111317;
   background: var(--green);
@@ -371,7 +389,7 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 15px;
+  padding: 0 12px;
 }
 
 .icon-button {
@@ -406,9 +424,13 @@ button:disabled {
 }
 
 .session-button {
-  max-width: 132px;
+  max-width: 118px;
   overflow: hidden;
   white-space: nowrap;
+}
+
+.command-button {
+  min-width: 132px;
 }
 
 .command-palette-backdrop {
@@ -2131,7 +2153,7 @@ button:disabled {
 
 .site-footer {
   display: grid;
-  grid-template-columns: minmax(340px, 0.72fr) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 0.68fr) minmax(0, 1fr);
   gap: 18px;
   padding: 42px 0 52px;
   border-top: 2px solid color-mix(in srgb, var(--line) 72%, transparent);
@@ -2219,7 +2241,7 @@ button:disabled {
 }
 
 .footer-status {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
 }
 
 .footer-links {
@@ -2244,7 +2266,7 @@ button:disabled {
 }
 
 .footer-status span {
-  min-height: 72px;
+  min-height: 82px;
   display: grid;
   grid-template-columns: auto 1fr;
   place-items: center start;
@@ -2259,7 +2281,7 @@ button:disabled {
 }
 
 .footer-stack {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .footer-stack span {
@@ -2349,6 +2371,32 @@ button:disabled {
 }
 
 @media (max-width: 980px) {
+  .nav {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-primary {
+    grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr);
+  }
+
+  .nav-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .nav-controls {
+    justify-content: stretch;
+  }
+
+  .nav-controls > * {
+    flex: 1 1 0;
+  }
+
+  .language-switcher,
+  .role-switcher,
+  .nav-command {
+    justify-content: center;
+  }
+
   .hero-grid,
   .ops-deck,
   .war-layout,
@@ -2387,11 +2435,11 @@ button:disabled {
     width: fit-content;
   }
 
-  .footer-stack,
   .footer-status {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .footer-stack,
   .footer-links {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2419,7 +2467,6 @@ button:disabled {
   }
 
   .nav-primary {
-    display: grid;
     grid-template-columns: 1fr;
   }
 
@@ -2445,6 +2492,15 @@ button:disabled {
 
   .nav-links {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .nav-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .command-button {
+    grid-column: span 2;
   }
 
   .command-card,

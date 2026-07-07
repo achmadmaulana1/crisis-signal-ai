@@ -1007,63 +1007,65 @@ function App() {
               <a href="#response">{t.navResponse}</a>
               <a href="#war-room">War room</a>
             </div>
-            <div className="language-switcher" title={t.languageHint}>
-              <Languages size={15} />
-              <span>{activeLanguage.short}</span>
-              <select
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as Language)}
-                aria-label={t.languageHint}
+            <div className="nav-controls">
+              <div className="language-switcher" title={t.languageHint}>
+                <Languages size={15} />
+                <span>{activeLanguage.short}</span>
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as Language)}
+                  aria-label={t.languageHint}
+                >
+                  {languageOptions.map((item) => (
+                    <option key={item.code} value={item.code}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="role-switcher" title="Demo role session">
+                <LockKeyhole size={15} />
+                <select
+                  value={currentUser?.role ?? 'admin'}
+                  onChange={(event) => switchRole(event.target.value as UserRole)}
+                  aria-label="Switch role"
+                >
+                  {roleOptions.map((item) => (
+                    <option key={item.role} value={item.role}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {currentUser ? (
+                <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
+                  {currentUser.avatar} Logout
+                </button>
+              ) : (
+                <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
+                  Login
+                </button>
+              )}
+              <button
+                type="button"
+                className="nav-command command-button"
+                onClick={() => setCommandPaletteOpen(true)}
+                title="Command center"
               >
-                {languageOptions.map((item) => (
-                  <option key={item.code} value={item.code}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="role-switcher" title="Demo role session">
-              <LockKeyhole size={15} />
-              <select
-                value={currentUser?.role ?? 'admin'}
-                onChange={(event) => switchRole(event.target.value as UserRole)}
-                aria-label="Switch role"
+                {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+                {t.command}
+                <kbd>Ctrl K</kbd>
+              </button>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={t.theme}
+                title={t.theme}
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               >
-                {roleOptions.map((item) => (
-                  <option key={item.role} value={item.role}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
             </div>
-            {currentUser ? (
-              <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
-                {currentUser.avatar} Logout
-              </button>
-            ) : (
-              <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
-                Login
-              </button>
-            )}
-            <button
-              type="button"
-              className="nav-command"
-              onClick={() => setCommandPaletteOpen(true)}
-              title="Command center"
-            >
-              {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-              {t.command}
-              <kbd>Ctrl K</kbd>
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={t.theme}
-              title={t.theme}
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
           </div>
         </nav>
 
