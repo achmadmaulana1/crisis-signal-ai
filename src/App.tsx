@@ -2060,37 +2060,63 @@ function App() {
         <div className="footer-identity panel">
           <img src="/brand/crisis-signal-logo.png" alt="" />
           <div>
-            <span className="footer-kicker">Crisis command layer</span>
+            <span className="footer-kicker">Portfolio crisis OS</span>
             <strong>CrisisSignal AI</strong>
-            <p>{t.heroDescription}</p>
+            <p>
+              Built as a fullstack command-center study for early warning, response coordination, public
+              communication, and decision audit. Demo data only; production secrets and private datasets stay outside
+              this repository.
+            </p>
+            <div className="footer-trust">
+              <span><LockKeyhole size={15} /> Session auth</span>
+              <span><BadgeCheck size={15} /> Prisma schema</span>
+              <span><ShieldAlert size={15} /> Protected routes</span>
+            </div>
           </div>
         </div>
 
         <div className="footer-ops">
           <div className="footer-status">
             <span>
-              <RadioTower size={16} /> {dashboard.stats.totalSignals} signals
+              <RadioTower size={16} />
+              <strong>{dashboard.stats.totalSignals}</strong>
+              Signals
             </span>
             <span>
-              <ShieldAlert size={16} /> {dashboard.stats.high + dashboard.stats.critical} escalated
+              <ShieldAlert size={16} />
+              <strong>{dashboard.stats.high + dashboard.stats.critical}</strong>
+              Escalated
             </span>
             <span>
-              <Globe2 size={16} /> {formatReach(dashboard.stats.monitoredReach)} reach
+              <Globe2 size={16} />
+              <strong>{formatReach(dashboard.stats.monitoredReach)}</strong>
+              Reach
+            </span>
+            <span>
+              <Database size={16} />
+              <strong>{dashboard.connectors.health}%</strong>
+              Connector health
             </span>
           </div>
 
           <div className="footer-stack">
             <span>
-              <Database size={16} /> JSON DB
+              <Database size={16} /> Prisma SQLite
             </span>
             <span>
-              <Server size={16} /> API
+              <Server size={16} /> Express API
             </span>
             <span>
               <Brain size={16} /> Risk engine
             </span>
             <span>
-              <FileText size={16} /> Audit log
+              <FileText size={16} /> PDF reports
+            </span>
+            <span>
+              <BellRing size={16} /> Notifications
+            </span>
+            <span>
+              <Languages size={16} /> Multilingual UI
             </span>
           </div>
 
@@ -2098,6 +2124,17 @@ function App() {
             <a href="#top">Overview</a>
             <a href="#monitor">{t.navMonitor}</a>
             <a href="#response">{t.navResponse}</a>
+            <a href={`/status/${activeSituation?.id ?? 'weather_extreme'}`} target="_blank" rel="noreferrer">
+              Public status <ArrowUpRight size={15} />
+            </a>
+          </div>
+
+          <div className="footer-footnote">
+            <span>Local-first demo workspace</span>
+            <p>
+              Designed for education and portfolio review. Replace demo connectors, SQLite storage, and local session
+              secret before any real deployment.
+            </p>
           </div>
         </div>
       </footer>
