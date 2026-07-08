@@ -987,7 +987,7 @@ function App() {
       </AnimatePresence>
       <section className="hero" id="top">
         <nav className="nav">
-          <div className="nav-primary">
+          <div className="nav-top">
             <a className="brand" href="#top" aria-label="CrisisSignal AI">
               <img src="/brand/crisis-signal-logo.png" alt="" />
               <span>
@@ -1000,8 +1000,32 @@ function App() {
               <strong>{dashboard.warRoom.operatingMode}</strong>
               <small>{dashboard.connectors.health}% connectors</small>
             </div>
+            <div className="nav-session">
+              {currentUser ? (
+                <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
+                  <LockKeyhole size={16} />
+                  <span>{currentUser.avatar}</span>
+                  Logout
+                </button>
+              ) : (
+                <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
+                  <LockKeyhole size={16} />
+                  Login
+                </button>
+              )}
+              <button
+                type="button"
+                className="icon-button"
+                aria-label={t.theme}
+                title={t.theme}
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+            </div>
           </div>
-          <div className="nav-actions">
+
+          <div className="nav-bottom">
             <div className="nav-links">
               <a href="#monitor">{t.navMonitor}</a>
               <a href="#response">{t.navResponse}</a>
@@ -1038,36 +1062,15 @@ function App() {
                   ))}
                 </select>
               </div>
-            {currentUser ? (
-              <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
-                <LockKeyhole size={16} />
-                <span>{currentUser.avatar}</span>
-                Logout
-              </button>
-            ) : (
-              <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
-                <LockKeyhole size={16} />
-                Login
-              </button>
-            )}
               <button
                 type="button"
                 className="nav-command command-button"
                 onClick={() => setCommandPaletteOpen(true)}
-              title="Command center"
+                title="Command center"
             >
               {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-              <span>{t.command}</span>
-              <kbd>Ctrl K</kbd>
-            </button>
-              <button
-                type="button"
-                className="icon-button"
-                aria-label={t.theme}
-                title={t.theme}
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              >
-                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                <span>{t.command}</span>
+                <kbd>Ctrl K</kbd>
               </button>
             </div>
           </div>

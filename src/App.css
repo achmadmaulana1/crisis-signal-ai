@@ -126,10 +126,8 @@
   top: 16px;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(330px, 0.9fr) minmax(0, 1.4fr);
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   padding: 12px;
   border: 2px solid var(--line);
   background:
@@ -139,17 +137,26 @@
   backdrop-filter: blur(18px);
 }
 
-.nav-primary {
+.nav-top,
+.nav-bottom {
   display: grid;
-  grid-template-columns: auto minmax(160px, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
+}
+
+.nav-top {
+  grid-template-columns: minmax(260px, 0.9fr) minmax(220px, 0.7fr) auto;
+}
+
+.nav-bottom {
+  grid-template-columns: minmax(300px, 0.8fr) minmax(0, 1fr);
 }
 
 .brand,
 .nav-links,
 .nav-controls,
+.nav-session,
 .hero-actions,
 .kicker,
 .command-head,
@@ -236,14 +243,6 @@
   }
 }
 
-.nav-actions {
-  display: grid;
-  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
 .nav-links {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -257,10 +256,15 @@
 
 .nav-controls {
   display: grid;
-  grid-template-columns: minmax(150px, 0.9fr) minmax(140px, 0.8fr) minmax(112px, 0.65fr) minmax(154px, 0.9fr) 50px;
+  grid-template-columns: minmax(170px, 0.9fr) minmax(150px, 0.8fr) minmax(160px, 0.85fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
+}
+
+.nav-session {
+  justify-content: end;
+  gap: 8px;
 }
 
 .nav-controls > * {
@@ -2384,16 +2388,16 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .nav-primary {
-    grid-template-columns: minmax(220px, 1fr) minmax(180px, 0.7fr);
+  .nav-top {
+    grid-template-columns: minmax(240px, 1fr) minmax(190px, 0.7fr) auto;
   }
 
-  .nav-actions {
+  .nav-bottom {
     grid-template-columns: 1fr;
   }
 
   .nav-controls {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: minmax(170px, 1fr) minmax(150px, 1fr) minmax(160px, 1fr);
   }
 
   .nav-controls > * {
@@ -2475,7 +2479,7 @@ button:disabled {
     align-items: stretch;
   }
 
-  .nav-primary {
+  .nav-top {
     grid-template-columns: 1fr;
   }
 
@@ -2483,7 +2487,7 @@ button:disabled {
     min-width: 0;
   }
 
-  .nav-actions,
+  .nav-bottom,
   .nav-links,
   .hero-actions,
   .command-metrics,
@@ -2492,10 +2496,6 @@ button:disabled {
   .slider-grid,
   .war-metrics {
     display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .nav-actions {
     grid-template-columns: 1fr;
   }
 
