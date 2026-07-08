@@ -1025,6 +1025,7 @@ function App() {
               </div>
               <div className="role-switcher" title="Demo role session">
                 <LockKeyhole size={15} />
+                <span className="control-label">Role</span>
                 <select
                   value={currentUser?.role ?? 'admin'}
                   onChange={(event) => switchRole(event.target.value as UserRole)}
@@ -1037,25 +1038,28 @@ function App() {
                   ))}
                 </select>
               </div>
-              {currentUser ? (
-                <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
-                  {currentUser.avatar} Logout
-                </button>
-              ) : (
-                <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
-                  Login
-                </button>
-              )}
+            {currentUser ? (
+              <button type="button" className="nav-command session-button" onClick={logoutDemo} title={currentUser.email}>
+                <LockKeyhole size={16} />
+                <span>{currentUser.avatar}</span>
+                Logout
+              </button>
+            ) : (
+              <button type="button" className="nav-command session-button" onClick={() => setAuthOpen(true)}>
+                <LockKeyhole size={16} />
+                Login
+              </button>
+            )}
               <button
                 type="button"
                 className="nav-command command-button"
                 onClick={() => setCommandPaletteOpen(true)}
-                title="Command center"
-              >
-                {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-                {t.command}
-                <kbd>Ctrl K</kbd>
-              </button>
+              title="Command center"
+            >
+              {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              <span>{t.command}</span>
+              <kbd>Ctrl K</kbd>
+            </button>
               <button
                 type="button"
                 className="icon-button"

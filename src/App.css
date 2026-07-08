@@ -126,7 +126,7 @@
   top: 16px;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(330px, 0.9fr) minmax(0, 1.4fr);
   align-items: center;
   justify-content: space-between;
   gap: 16px;
@@ -180,14 +180,15 @@
 
 .brand strong {
   display: block;
-  font-size: 1.08rem;
+  font-size: 1.18rem;
   line-height: 1;
 }
 
 .brand small {
   display: block;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.86rem;
+  line-height: 1.25;
 }
 
 .nav-health {
@@ -215,13 +216,13 @@
 }
 
 .nav-health strong {
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   line-height: 1;
 }
 
 .nav-health small {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
   font-weight: 900;
 }
 
@@ -237,7 +238,7 @@
 
 .nav-actions {
   display: grid;
-  grid-template-columns: minmax(260px, 0.78fr) minmax(0, 1fr);
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -255,23 +256,24 @@
 }
 
 .nav-controls {
-  display: flex;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(150px, 0.9fr) minmax(140px, 0.8fr) minmax(112px, 0.65fr) minmax(154px, 0.9fr) 50px;
+  align-items: center;
   gap: 8px;
   min-width: 0;
 }
 
 .nav-controls > * {
-  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .language-switcher {
   position: relative;
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 10px;
   border: 2px solid var(--line);
   color: var(--ink);
   background: color-mix(in srgb, var(--cyan) 26%, var(--panel-strong));
@@ -300,18 +302,19 @@
 }
 
 .language-switcher span {
-  min-width: 28px;
-  min-height: 26px;
+  min-width: 34px;
+  min-height: 28px;
   display: grid;
   place-items: center;
   border: 2px solid var(--line);
   color: #111317;
   background: var(--amber);
-  font-size: 0.72rem;
+  font-size: 0.82rem;
+  font-weight: 1000;
 }
 
 .language-switcher select {
-  max-width: 88px;
+  max-width: 116px;
   border: 0;
   color: inherit;
   background: transparent;
@@ -333,16 +336,20 @@
 }
 
 .role-switcher {
-  min-height: 44px;
+  min-height: 48px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 10px;
   border: 2px solid var(--line);
   color: #111317;
   background: var(--green);
   box-shadow: 4px 4px 0 var(--shadow);
   font-weight: 900;
+}
+
+.control-label {
+  font-weight: 1000;
 }
 
 .role-switcher select {
@@ -360,12 +367,13 @@
 .nav-command,
 .icon-button,
 .reset-button {
-  min-height: 44px;
+  min-height: 48px;
   border: 2px solid var(--line);
   color: var(--ink);
   background: var(--panel-strong);
   box-shadow: 4px 4px 0 var(--shadow);
-  font-weight: 900;
+  font-size: 0.95rem;
+  font-weight: 1000;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -389,11 +397,11 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 12px;
+  padding: 0 14px;
 }
 
 .icon-button {
-  width: 46px;
+  width: 50px;
   display: grid;
   place-items: center;
   padding: 0;
@@ -419,18 +427,19 @@ button:disabled {
   border: 2px solid #111317;
   background: color-mix(in srgb, #fff 70%, var(--amber));
   font: inherit;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   line-height: 1;
 }
 
 .session-button {
-  max-width: 118px;
+  max-width: none;
+  min-width: 112px;
   overflow: hidden;
   white-space: nowrap;
 }
 
 .command-button {
-  min-width: 132px;
+  min-width: 154px;
 }
 
 .command-palette-backdrop {
@@ -2384,11 +2393,11 @@ button:disabled {
   }
 
   .nav-controls {
-    justify-content: stretch;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .nav-controls > * {
-    flex: 1 1 0;
+    min-width: 0;
   }
 
   .language-switcher,
@@ -2496,11 +2505,19 @@ button:disabled {
 
   .nav-controls {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
 
   .command-button {
     grid-column: span 2;
+  }
+
+  .language-switcher select {
+    max-width: 100%;
+  }
+
+  .role-switcher select {
+    min-width: 0;
   }
 
   .command-card,
