@@ -256,7 +256,7 @@
 
 .nav-controls {
   display: grid;
-  grid-template-columns: minmax(170px, 0.9fr) minmax(150px, 0.8fr) minmax(160px, 0.85fr);
+  grid-template-columns: minmax(178px, 0.9fr) minmax(156px, 0.78fr) minmax(190px, 0.95fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -427,12 +427,13 @@ button:disabled {
 }
 
 .nav-command kbd {
-  padding: 3px 5px;
+  padding: 4px 6px;
   border: 2px solid #111317;
   background: color-mix(in srgb, #fff 70%, var(--amber));
   font: inherit;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   line-height: 1;
+  white-space: nowrap;
 }
 
 .session-button {
@@ -443,7 +444,23 @@ button:disabled {
 }
 
 .command-button {
-  min-width: 154px;
+  min-width: 190px;
+  display: grid;
+  grid-template-columns: auto minmax(74px, 1fr) auto;
+  justify-content: stretch;
+  justify-items: center;
+  padding: 0 10px;
+}
+
+.command-button > span {
+  justify-self: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-button > svg {
+  justify-self: center;
 }
 
 .command-palette-backdrop {
@@ -2397,7 +2414,7 @@ button:disabled {
   }
 
   .nav-controls {
-    grid-template-columns: minmax(170px, 1fr) minmax(150px, 1fr) minmax(160px, 1fr);
+    grid-template-columns: minmax(170px, 1fr) minmax(150px, 1fr) minmax(190px, 1fr);
   }
 
   .nav-controls > * {
@@ -2510,6 +2527,7 @@ button:disabled {
 
   .command-button {
     grid-column: span 2;
+    width: 100%;
   }
 
   .language-switcher select {

@@ -1067,10 +1067,10 @@ function App() {
                 className="nav-command command-button"
                 onClick={() => setCommandPaletteOpen(true)}
                 title="Command center"
-            >
-              {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+              >
+                {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
                 <span>{t.command}</span>
-                <kbd>Ctrl K</kbd>
+                <kbd aria-label="Shortcut Control K">Ctrl K</kbd>
               </button>
             </div>
           </div>
