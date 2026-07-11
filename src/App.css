@@ -256,7 +256,7 @@
 
 .nav-controls {
   display: grid;
-  grid-template-columns: minmax(178px, 0.9fr) minmax(156px, 0.78fr) minmax(190px, 0.95fr);
+  grid-template-columns: minmax(178px, 0.9fr) minmax(156px, 0.78fr) minmax(218px, 1fr);
   align-items: center;
   gap: 8px;
   min-width: 0;
@@ -444,23 +444,56 @@ button:disabled {
 }
 
 .command-button {
-  min-width: 190px;
+  min-width: 218px;
+  min-height: 54px;
   display: grid;
-  grid-template-columns: auto minmax(74px, 1fr) auto;
+  grid-template-columns: 34px minmax(92px, 1fr) auto;
+  align-items: center;
   justify-content: stretch;
-  justify-items: center;
+  justify-items: stretch;
+  gap: 9px;
   padding: 0 10px;
+  text-align: left;
 }
 
-.command-button > span {
-  justify-self: start;
+.command-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #111317;
+  background: color-mix(in srgb, #fff 78%, var(--amber));
+  box-shadow: 2px 2px 0 #111317;
+}
+
+.command-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.command-copy strong,
+.command-copy small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.command-button > svg {
-  justify-self: center;
+.command-copy strong {
+  font-size: 0.96rem;
+  line-height: 1;
+}
+
+.command-copy small {
+  color: color-mix(in srgb, #111317 74%, var(--amber));
+  font-size: 0.72rem;
+  font-weight: 1000;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.command-button kbd {
+  justify-self: end;
 }
 
 .command-palette-backdrop {
@@ -2414,7 +2447,7 @@ button:disabled {
   }
 
   .nav-controls {
-    grid-template-columns: minmax(170px, 1fr) minmax(150px, 1fr) minmax(190px, 1fr);
+    grid-template-columns: minmax(170px, 1fr) minmax(150px, 1fr) minmax(218px, 1fr);
   }
 
   .nav-controls > * {
@@ -2528,6 +2561,7 @@ button:disabled {
   .command-button {
     grid-column: span 2;
     width: 100%;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
   }
 
   .language-switcher select {

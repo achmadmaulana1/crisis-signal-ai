@@ -1068,8 +1068,13 @@ function App() {
                 onClick={() => setCommandPaletteOpen(true)}
                 title="Command center"
               >
-                {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
-                <span>{t.command}</span>
+                <span className="command-icon">
+                  {commandPaletteOpen ? <Minimize2 size={17} /> : <Maximize2 size={17} />}
+                </span>
+                <span className="command-copy">
+                  <strong>{t.command}</strong>
+                  <small>Quick actions</small>
+                </span>
                 <kbd aria-label="Shortcut Control K">Ctrl K</kbd>
               </button>
             </div>
