@@ -372,7 +372,7 @@ app.post('/api/ingest', requireAuth(['admin', 'analyst', 'field_verifier']), asy
 
 app.post('/api/simulate', requireAuth(['admin', 'analyst']), async (request, response, next) => {
   try {
-    if (request.body.scenario && !['flood', 'scam', 'crowd'].includes(request.body.scenario)) {
+    if (request.body.scenario && !['flood', 'scam', 'crowd', 'brand', 'supply'].includes(request.body.scenario)) {
       response.status(400).json({ error: 'Invalid scenario' })
       return
     }
@@ -411,7 +411,16 @@ app.post('/api/connectors/run', requireAuth(['admin', 'analyst']), async (reques
   try {
     const input = parseBody(connectorRunSchema, request.body)
     const connector = await prisma.sourceConnector.findFirst({ where: { type: input.type } })
-    const scenario = input.type === 'weather' ? 'flood' : input.type === 'social_mock' ? 'scam' : 'crowd'
+    const scenario =
+      input.type === 'weather'
+        ? 'flood'
+        : input.type === 'social_mock'
+          ? 'scam'
+          : input.type === 'rss' || input.type === 'news'
+            ? 'brand'
+            : input.type === 'csv'
+              ? 'supply'
+              : 'crowd'
     const db = await readDb()
     const signal = ingestSignal(db, scenarioSignal({ scenario }))
     await writeDb(db)

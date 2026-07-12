@@ -36,6 +36,8 @@ import {
   Server,
   ShieldAlert,
   Siren,
+  Settings,
+  Sparkles,
   Sun,
   UsersRound,
   X,
@@ -72,6 +74,7 @@ type Theme = 'dark' | 'light'
 type Language = 'id' | 'en' | 'ms' | 'ja' | 'ar'
 type DetailTab = 'overview' | 'evidence' | 'timeline' | 'playbook' | 'approvals' | 'report' | 'audit'
 type MapLayer = 'risk' | 'reach' | 'source' | 'verification'
+type ScenarioId = 'flood' | 'scam' | 'crowd' | 'brand' | 'supply'
 
 const totalFrames = 320
 
@@ -403,10 +406,12 @@ const categoryLabels: Record<Category, string> = {
 }
 
 const filterLevels: Array<'all' | RiskLevel> = ['all', 'critical', 'high', 'medium', 'low']
-const scenarioOptions: Array<{ id: 'flood' | 'scam' | 'crowd'; label: string }> = [
-  { id: 'flood', label: 'Flood surge' },
-  { id: 'scam', label: 'Scam spike' },
-  { id: 'crowd', label: 'Crowd risk' },
+const scenarioOptions: Array<{ id: ScenarioId; label: string; detail: string }> = [
+  { id: 'flood', label: 'Flood surge', detail: 'Weather + citizen reports' },
+  { id: 'scam', label: 'Scam spike', detail: 'Lookalike link propagation' },
+  { id: 'crowd', label: 'Crowd risk', detail: 'Event safety escalation' },
+  { id: 'brand', label: 'Brand crisis', detail: 'Public sentiment backlash' },
+  { id: 'supply', label: 'Supply disruption', detail: 'Logistics delay cluster' },
 ]
 const roleOptions: Array<{ role: UserRole; label: string }> = [
   { role: 'admin', label: 'Admin' },
@@ -462,6 +467,15 @@ function App() {
   const [commandQuery, setCommandQuery] = useState('')
   const [authOpen, setAuthOpen] = useState(false)
   const [authForm, setAuthForm] = useState({ email: 'admin@crisissignal.ai', password: 'CrisisSignal2026!' })
+  const [onboardingOpen, setOnboardingOpen] = useState(() => window.localStorage.getItem('crisis-signal-onboarded') !== 'yes')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [reportPreviewOpen, setReportPreviewOpen] = useState(false)
+  const [operatorSettings, setOperatorSettings] = useState({
+    organization: 'CrisisSignal Response Lab',
+    webhook: '/api/connectors/webhook/report',
+    defaultSla: 'Critical 15m / High 30m / Medium 2h',
+    notificationMode: 'In-app + webhook mock',
+  })
   const [toast, setToast] = useState('')
   const [completedActions, setCompletedActions] = useState<Record<string, boolean>>({})
   const [busyAction, setBusyAction] = useState('')
@@ -642,6 +656,24 @@ function App() {
         action: () => setCommandMode((value) => !value),
       },
       {
+        id: 'open-onboarding',
+        label: 'Open operator onboarding',
+        meta: 'Guide',
+        action: () => setOnboardingOpen(true),
+      },
+      {
+        id: 'open-settings',
+        label: 'Open workspace settings',
+        meta: 'Settings',
+        action: () => setSettingsOpen(true),
+      },
+      {
+        id: 'preview-report',
+        label: 'Preview active incident report',
+        meta: 'Report',
+        action: () => setReportPreviewOpen(true),
+      },
+      {
         id: 'scenario-scam',
         label: 'Run scam spike scenario',
         meta: 'Simulator',
@@ -658,6 +690,18 @@ function App() {
         label: 'Run crowd risk scenario',
         meta: 'Simulator',
         action: () => runScenario('crowd'),
+      },
+      {
+        id: 'scenario-brand',
+        label: 'Run brand crisis scenario',
+        meta: 'Simulator',
+        action: () => runScenario('brand'),
+      },
+      {
+        id: 'scenario-supply',
+        label: 'Run supply disruption scenario',
+        meta: 'Simulator',
+        action: () => runScenario('supply'),
       },
       {
         id: 'export-report',
@@ -691,21 +735,24 @@ function App() {
     setDashboard(result.dashboard)
     setActiveId(result.signal.category)
     setDetailOpen(true)
+    setToast('Signal added and risk score recalculated')
   }
 
   async function restoreDemo() {
     const next = await resetDemo()
     setDashboard(next)
     setActiveId(next.situations[0]?.id ?? 'weather_extreme')
+    setToast('Demo workspace restored')
   }
 
-  async function runScenario(scenario: 'flood' | 'scam' | 'crowd') {
+  async function runScenario(scenario: ScenarioId) {
     setBusyAction(scenario)
     try {
       const result = await simulateScenario(scenario)
       setDashboard(result.dashboard)
       setActiveId(result.signal.category)
       setDetailOpen(true)
+      setToast(`${scenarioOptions.find((item) => item.id === scenario)?.label ?? 'Scenario'} injected`)
     } finally {
       setBusyAction('')
     }
@@ -723,6 +770,7 @@ function App() {
       link.download = `crisis-report-${activeSituation.id}.json`
       link.click()
       URL.revokeObjectURL(url)
+      setToast('JSON report exported')
     } finally {
       setBusyAction('')
     }
@@ -740,9 +788,16 @@ function App() {
       const result = await loginRole(role)
       setCurrentUser(result.user)
       setLiveEvents(await getLiveEvents())
+      setToast(`Role switched to ${result.user.role}`)
     } finally {
       setBusyAction('')
     }
+  }
+
+  function completeOnboarding() {
+    window.localStorage.setItem('crisis-signal-onboarded', 'yes')
+    setOnboardingOpen(false)
+    setToast('Operator guide completed')
   }
 
   async function loginDemo() {
@@ -973,6 +1028,204 @@ function App() {
         )}
       </AnimatePresence>
       <AnimatePresence>
+        {onboardingOpen && (
+          <motion.div
+            className="auth-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={() => setOnboardingOpen(false)}
+          >
+            <motion.div
+              className="operator-modal panel"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-title">
+                <Sparkles />
+                <div>
+                  <strong>Operator quick start</strong>
+                  <small>Three actions to understand the crisis operating flow.</small>
+                </div>
+              </div>
+              <div className="onboarding-steps">
+                <span>
+                  <strong>1</strong>
+                  Login with a demo role, then switch role permissions from the navbar.
+                </span>
+                <span>
+                  <strong>2</strong>
+                  Run a scenario or connector to inject a new signal into the risk engine.
+                </span>
+                <span>
+                  <strong>3</strong>
+                  Open incident detail, review evidence, approve statement, preview report, then export.
+                </span>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="secondary-action" onClick={() => setAuthOpen(true)}>
+                  <LockKeyhole size={16} /> Login
+                </button>
+                <button type="button" className="secondary-action" onClick={() => runScenario('brand')}>
+                  <Play size={16} /> Run scenario
+                </button>
+                <button type="button" className="primary-action" onClick={completeOnboarding}>
+                  Start operating <ChevronRight size={16} />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {settingsOpen && (
+          <motion.div
+            className="auth-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={() => setSettingsOpen(false)}
+          >
+            <motion.div
+              className="operator-modal panel settings-modal"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-title">
+                <Settings />
+                <div>
+                  <strong>Workspace settings</strong>
+                  <small>Local demo settings for organization, connector, notification, and SLA behavior.</small>
+                </div>
+              </div>
+              <div className="settings-grid">
+                <label>
+                  Organization
+                  <input
+                    value={operatorSettings.organization}
+                    onChange={(event) => setOperatorSettings({ ...operatorSettings, organization: event.target.value })}
+                  />
+                </label>
+                <label>
+                  Default webhook
+                  <input
+                    value={operatorSettings.webhook}
+                    onChange={(event) => setOperatorSettings({ ...operatorSettings, webhook: event.target.value })}
+                  />
+                </label>
+                <label>
+                  SLA policy
+                  <input
+                    value={operatorSettings.defaultSla}
+                    onChange={(event) => setOperatorSettings({ ...operatorSettings, defaultSla: event.target.value })}
+                  />
+                </label>
+                <label>
+                  Notification mode
+                  <select
+                    value={operatorSettings.notificationMode}
+                    onChange={(event) => setOperatorSettings({ ...operatorSettings, notificationMode: event.target.value })}
+                  >
+                    <option>In-app + webhook mock</option>
+                    <option>Email mock only</option>
+                    <option>Slack/Discord mock queue</option>
+                    <option>All demo channels</option>
+                  </select>
+                </label>
+              </div>
+              <div className="settings-summary">
+                <span><Database size={16} /> {dashboard.connectors.online}/{dashboard.connectors.total} connectors online</span>
+                <span><Activity size={16} /> {dashboard.stats.activeSituations} active incidents</span>
+                <span><Languages size={16} /> {activeLanguage.label} interface</span>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="secondary-action" onClick={() => setSettingsOpen(false)}>
+                  Close
+                </button>
+                <button
+                  type="button"
+                  className="primary-action"
+                  onClick={() => {
+                    setSettingsOpen(false)
+                    setToast('Workspace settings saved locally')
+                  }}
+                >
+                  Save local settings
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {reportPreviewOpen && activeSituation && (
+          <motion.div
+            className="auth-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onMouseDown={() => setReportPreviewOpen(false)}
+          >
+            <motion.div
+              className="operator-modal panel report-preview-modal"
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className="panel-title">
+                <FileText />
+                <div>
+                  <strong>Report preview</strong>
+                  <small>{activeSituation.title}</small>
+                </div>
+              </div>
+              <div className="report-preview-grid">
+                <span>
+                  <small>Risk level</small>
+                  <strong>{levelLabels[activeSituation.level]} / {activeSituation.score}</strong>
+                </span>
+                <span>
+                  <small>Lifecycle</small>
+                  <strong>{activeSituation.lifecycle}</strong>
+                </span>
+                <span>
+                  <small>Signals</small>
+                  <strong>{activeSituation.signalCount}</strong>
+                </span>
+                <span>
+                  <small>Reach</small>
+                  <strong>{formatReach(activeSituation.reach)}</strong>
+                </span>
+              </div>
+              <div className="report-preview-body">
+                <strong>Executive summary</strong>
+                <p>{activeSituation.summary}</p>
+                <strong>Recommended action</strong>
+                <p>{activeSituation.nextAction.primary}</p>
+                <strong>Public statement draft</strong>
+                <blockquote>{activeSituation.statement}</blockquote>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="secondary-action" onClick={() => setReportPreviewOpen(false)}>
+                  Close preview
+                </button>
+                <button type="button" className="secondary-action" onClick={saveReportAction}>
+                  <FileText size={16} /> Save
+                </button>
+                <button type="button" className="primary-action" onClick={exportReport}>
+                  <Download size={16} /> Export JSON
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
         {toast && (
           <motion.div
             className="toast"
@@ -1021,6 +1274,15 @@ function App() {
                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               >
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="Workspace settings"
+                title="Workspace settings"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings size={18} />
               </button>
             </div>
           </div>
@@ -1190,7 +1452,8 @@ function App() {
                   onClick={() => runScenario(scenario.id)}
                   disabled={busyAction === scenario.id}
                 >
-                  {busyAction === scenario.id ? t.running : scenario.label}
+                  <strong>{busyAction === scenario.id ? t.running : scenario.label}</strong>
+                  <small>{scenario.detail}</small>
                 </button>
               ))}
             </div>
@@ -1221,6 +1484,9 @@ function App() {
               <Download size={16} /> {t.report}
             </span>
             <div className="report-row">
+              <button type="button" className="secondary-action report-action" onClick={() => setReportPreviewOpen(true)}>
+                Preview <Eye size={17} />
+              </button>
               <button type="button" className="secondary-action report-action" onClick={exportReport}>
                 {busyAction === 'export' ? t.preparing : 'JSON'} <ArrowUpRight size={17} />
               </button>
@@ -1976,6 +2242,9 @@ function App() {
               ))}
             </div>
             <div className="drawer-actions">
+              <button type="button" className="secondary-action" onClick={() => setReportPreviewOpen(true)}>
+                <Eye size={17} /> Preview
+              </button>
               <button type="button" className="primary-action" onClick={exportReport}>
                 <Download size={17} /> Export
               </button>

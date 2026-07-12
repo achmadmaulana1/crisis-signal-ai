@@ -19,6 +19,7 @@ Signal intake -> Risk scoring -> Incident lifecycle -> War room readiness -> Tea
 - Operator-first UX: fast scan metrics, active incident cards, lifecycle/SLA card, war room readiness, connector center, notification center, and Ctrl+K command palette.
 - Multilingual interface: Indonesian and English as primary languages, with Melayu, Japanese, and Arabic interface options.
 - Mobile operator mode: sticky bottom action bar, compact navigation, and responsive panels.
+- Guided product UX: first-run operator onboarding, workspace settings panel, scenario selector, toast feedback, and report preview before export.
 
 ## GitHub Description
 
@@ -58,6 +59,9 @@ Fullstack AI crisis command center with auth session, risk scoring, incident lif
 - Team Collaboration: comment, attachment, owner, and task data model support.
 - SLA Engine: critical 15m, high 30m, medium 2h, low monitor window, pressure and countdown UI.
 - Public Status Page: `/status/:incidentId`.
+- Scenario Selector: flood surge, scam spike, crowd risk, brand crisis, and supply disruption demo flows.
+- Report Preview: executive summary, risk, lifecycle, reach, recommendation, and public statement preview before JSON/PDF export.
+- Workspace Settings: local organization, webhook, notification mode, language, connector health, and SLA policy controls.
 
 ## Core Features
 
@@ -70,6 +74,28 @@ Fullstack AI crisis command center with auth session, risk scoring, incident lif
 - Exportable JSON and PDF incident reports.
 - Prisma SQLite database with seed data and local bootstrap script.
 - Multilingual UI, dark/light mode, cursor motion layer, and 320-frame scroll animation assets.
+- First-run onboarding, local settings panel, toast notifications, and richer scenario selector for faster demo walkthroughs.
+
+## Demo Scenarios
+
+| Scenario | Category | What it tests |
+| --- | --- | --- |
+| Flood surge | Weather extreme | Weather API signal, citizen reports, SLA pressure, logistics response |
+| Scam spike | Scam | Lookalike links, social propagation, public warning workflow |
+| Crowd risk | Event safety | Short-video escalation, venue response, field verification |
+| Brand crisis | Brand issue | Audience backlash, cultural context, statement approval |
+| Supply disruption | Supply disruption | RSS/logistics signals, inventory risk, operational recommendation |
+
+## Portfolio Screenshots To Add
+
+Capture these after running `npm run dev`:
+
+- Dashboard hero and AI situation summary.
+- Scenario selector plus war room readiness.
+- Incident detail drawer with Evidence or Report tab.
+- Command palette and report preview modal.
+
+Recommended folder: `public/screenshots/`. Add the best images to this README after capture.
 
 ## Project Structure
 
@@ -137,6 +163,18 @@ npm run build
 npm run lint
 npm run start
 ```
+
+## Safe GitHub Push Checklist
+
+Before pushing a public portfolio update:
+
+```bash
+git status --short
+git diff -- .gitignore
+git ls-files .env server/data prisma/*.db dist node_modules
+```
+
+Do not commit local secrets, generated databases, build output, dependency folders, API keys, access tokens, private datasets, real customer reports, or unreleased production logic. Keep `.env.example`, schema files, seed/demo data, README docs, screenshots, and source code that is safe for portfolio review.
 
 ## API Overview
 

@@ -25,7 +25,7 @@ export async function resetDemo() {
   return response.json() as Promise<Dashboard>
 }
 
-export async function simulateScenario(scenario: 'flood' | 'scam' | 'crowd') {
+export async function simulateScenario(scenario: 'flood' | 'scam' | 'crowd' | 'brand' | 'supply') {
   const response = await fetch('/api/simulate', {
     method: 'POST',
     headers: jsonHeaders,

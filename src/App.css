@@ -593,6 +593,126 @@ button:disabled {
   padding: 18px;
 }
 
+.operator-modal {
+  width: min(760px, 100%);
+  max-height: min(86vh, 780px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.operator-modal .panel-title {
+  align-items: start;
+}
+
+.onboarding-steps,
+.settings-grid,
+.settings-summary,
+.report-preview-grid,
+.report-preview-body {
+  display: grid;
+  gap: 10px;
+}
+
+.onboarding-steps {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.onboarding-steps span,
+.settings-summary span,
+.report-preview-grid span {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 2px solid var(--line);
+  background: var(--panel-strong);
+  box-shadow: 4px 4px 0 var(--shadow);
+  font-weight: 900;
+}
+
+.onboarding-steps strong {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  color: #111317;
+  background: var(--amber);
+  border: 2px solid var(--line);
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.settings-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settings-grid label {
+  display: grid;
+  gap: 7px;
+  font-weight: 1000;
+}
+
+.settings-grid input,
+.settings-grid select {
+  min-height: 44px;
+  border: 2px solid var(--line);
+  color: var(--ink);
+  background: var(--panel-strong);
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 900;
+  outline: none;
+}
+
+.settings-summary {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.settings-summary span {
+  display: flex;
+  align-items: center;
+}
+
+.report-preview-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.report-preview-grid small {
+  color: var(--muted);
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.report-preview-grid strong {
+  font-size: 1.05rem;
+}
+
+.report-preview-body {
+  padding: 14px;
+  border: 2px solid var(--line);
+  background: var(--panel-strong);
+}
+
+.report-preview-body p,
+.report-preview-body blockquote {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.report-preview-body blockquote {
+  padding-left: 12px;
+  border-left: 4px solid var(--amber);
+}
+
 .auth-modal label {
   display: grid;
   gap: 7px;
@@ -1212,9 +1332,9 @@ button:disabled {
 }
 
 .scenario-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(118px, 1fr));
   gap: 9px;
-  flex-wrap: wrap;
 }
 
 .scenario-row button,
@@ -1229,7 +1349,24 @@ button:disabled {
 }
 
 .scenario-row button {
-  padding: 0 10px;
+  min-height: 62px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.scenario-row button strong,
+.scenario-row button small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scenario-row button small {
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .scenario-row button:disabled {
@@ -2462,6 +2599,7 @@ button:disabled {
 
   .hero-grid,
   .ops-deck,
+  .scenario-row,
   .war-layout,
   .systems-grid,
   .operating-grid,
@@ -2506,6 +2644,15 @@ button:disabled {
   .footer-links {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .onboarding-steps,
+  .report-preview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .settings-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2542,6 +2689,9 @@ button:disabled {
   .hero-actions,
   .command-metrics,
   .metrics-strip,
+  .onboarding-steps,
+  .settings-grid,
+  .report-preview-grid,
   .form-row,
   .slider-grid,
   .war-metrics {
@@ -2562,6 +2712,16 @@ button:disabled {
     grid-column: span 2;
     width: 100%;
     grid-template-columns: 34px minmax(0, 1fr) auto;
+  }
+
+  .operator-modal {
+    max-height: 92vh;
+    padding: 14px;
+  }
+
+  .modal-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .language-switcher select {
