@@ -2899,7 +2899,7 @@ button:disabled {
   }
 
   .detail-drawer {
-    inset: 10px;
+    inset: 100px;
     width: auto;
   }
 }
